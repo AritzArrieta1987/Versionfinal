@@ -1,40 +1,33 @@
 // Configuración centralizada del API
-// En desarrollo local (localhost) usamos el proxy de Vite
-// En producción y preview usamos la URL completa
-const isLocalhost = typeof window !== 'undefined' && 
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-// IMPORTANTE: En preview de Figma Make, siempre usar la URL completa
-const API_BASE_URL = isLocalhost ? '' : 'https://app.bigartist.es';
+// Usa la variable de entorno VITE_API_URL si está disponible
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://app.bigartist.es/api';
 
 console.log('🔧 API Configuration:', {
-  hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
-  isLocalhost,
   API_BASE_URL,
-  environment: process.env.NODE_ENV
+  environment: import.meta.env.MODE
 });
 
 export const API_ENDPOINTS = {
   // Auth
-  LOGIN: `${API_BASE_URL}/api/auth/login`,
-  LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+  LOGIN: `${API_BASE_URL}/auth/login`,
+  LOGOUT: `${API_BASE_URL}/auth/logout`,
   
   // Finances
-  PAYMENT_REQUESTS: `${API_BASE_URL}/api/finances/payment-requests`,
-  EXPENSES: `${API_BASE_URL}/api/finances/expenses`,
-  INCOME: `${API_BASE_URL}/api/finances/income`,
-  CONTRACTS: `${API_BASE_URL}/api/finances/contracts`,
-  REPORTS: `${API_BASE_URL}/api/finances/reports`,
-  STATS: `${API_BASE_URL}/api/finances/stats`,
+  PAYMENT_REQUESTS: `${API_BASE_URL}/finances/payment-requests`,
+  EXPENSES: `${API_BASE_URL}/finances/expenses`,
+  INCOME: `${API_BASE_URL}/finances/income`,
+  CONTRACTS: `${API_BASE_URL}/finances/contracts`,
+  REPORTS: `${API_BASE_URL}/finances/reports`,
+  STATS: `${API_BASE_URL}/finances/stats`,
   
   // Artists
-  ARTISTS: `${API_BASE_URL}/api/artists`,
+  ARTISTS: `${API_BASE_URL}/artists`,
   
   // Tracks
-  TRACKS: `${API_BASE_URL}/api/tracks`,
+  TRACKS: `${API_BASE_URL}/tracks`,
   
   // CSV Upload
-  UPLOAD_CSV: `${API_BASE_URL}/api/upload/csv`,
+  UPLOAD_CSV: `${API_BASE_URL}/upload/csv`,
 };
 
 // Helper function para hacer requests con autenticación
