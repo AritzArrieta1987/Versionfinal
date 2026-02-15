@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Wallet, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Download, Filter, Calendar, Eye, FileText, Clock, ChevronDown, TrendingDown, Check, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { IncomeSection } from './IncomeSection';
@@ -20,6 +20,18 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
   const [reportPeriod, setReportPeriod] = useState('monthly'); // monthly, quarterly, yearly
   const [reportMonth, setReportMonth] = useState(new Date().getMonth());
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Mock contracts data - En producción esto vendría del backend
   const contracts = artists.map((artist, index) => ({
@@ -41,13 +53,13 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
     : [];
 
   return (
-    <div style={{ paddingLeft: '24px', paddingRight: '24px' }}>
+    <div style={{ paddingLeft: isMobile ? '16px' : '24px', paddingRight: isMobile ? '16px' : '24px' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: '700', color: '#ffffff', marginBottom: '4px' }}>
+      <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
+        <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: '#ffffff', marginBottom: '4px' }}>
           Finanzas y Reportes
         </h1>
-        <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>
+        <p style={{ fontSize: isMobile ? '13px' : '14px', color: 'rgba(255, 255, 255, 0.7)' }}>
           Gestiona y analiza los ingresos, gastos y reportes financieros
         </p>
       </div>
@@ -55,11 +67,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
       {/* Tabs Navigation */}
       <div style={{
         display: 'flex',
-        gap: '12px',
-        marginBottom: '36px',
+        gap: isMobile ? '8px' : '12px',
+        marginBottom: isMobile ? '24px' : '36px',
         borderBottom: '2px solid rgba(201, 165, 116, 0.2)',
         paddingBottom: '0',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        overflowX: isMobile ? 'auto' : 'visible'
       }}>
         {[
           { id: 'overview', label: 'Resumen General', icon: Wallet },
@@ -75,20 +88,21 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               key={tab.id}
               onClick={() => setFinancesTab(tab.id)}
               style={{
-                padding: '12px 20px',
+                padding: isMobile ? '10px 14px' : '12px 20px',
                 background: isActive ? 'rgba(201, 165, 116, 0.1)' : 'transparent',
                 border: 'none',
                 borderBottom: isActive ? '2px solid #c9a574' : '2px solid transparent',
                 color: isActive ? '#c9a574' : '#AFB3B7',
-                fontSize: '14px',
+                fontSize: isMobile ? '12px' : '14px',
                 fontWeight: isActive ? '600' : '500',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: isMobile ? '6px' : '8px',
                 transition: 'all 0.3s ease',
                 marginBottom: '-2px',
-                position: 'relative'
+                position: 'relative',
+                whiteSpace: 'nowrap'
               }}
               onMouseEnter={(e) => {
                 if (!isActive) e.currentTarget.style.color = '#ffffff';
@@ -97,7 +111,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 if (!isActive) e.currentTarget.style.color = '#AFB3B7';
               }}
             >
-              <Icon size={16} />
+              <Icon size={isMobile ? 14 : 16} />
               {tab.label}
               {tab.badge && tab.badge > 0 && (
                 <>
@@ -118,7 +132,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   <span style={{
                     background: '#c9a574',
                     color: '#2a3f3f',
-                    fontSize: '11px',
+                    fontSize: isMobile ? '10px' : '11px',
                     fontWeight: '700',
                     padding: '2px 6px',
                     borderRadius: '10px',
@@ -143,24 +157,24 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
         {/* Header Cards Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '430px 1fr',
-          gap: '16px',
-          marginBottom: '32px',
+          gridTemplateColumns: isMobile ? '1fr' : '430px 1fr',
+          gap: isMobile ? '12px' : '16px',
+          marginBottom: isMobile ? '20px' : '32px',
           padding: '0',
           width: '100%'
         }}>
           {/* Main Welcome Card */}
           <div style={{
             background: 'rgba(42, 63, 63, 0.3)',
-            borderRadius: '16px',
-            padding: '28px 32px',
+            borderRadius: isMobile ? '12px' : '16px',
+            padding: isMobile ? '20px 24px' : '28px 32px',
             position: 'relative',
             overflow: 'hidden',
             border: '1px solid rgba(201, 165, 116, 0.2)',
             backdropFilter: 'blur(10px)'
           }}>
             <h2 style={{
-              fontSize: '24px',
+              fontSize: isMobile ? '18px' : '24px',
               fontWeight: '600',
               color: '#ffffff',
               marginBottom: '8px',
@@ -176,21 +190,21 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               display: 'flex',
               alignItems: 'flex-end',
               gap: '4px',
-              height: '60px',
-              marginTop: '20px',
-              marginBottom: '24px'
+              height: isMobile ? '50px' : '60px',
+              marginTop: isMobile ? '16px' : '20px',
+              marginBottom: isMobile ? '16px' : '24px'
             }}>
               {csvLineData.slice(-6).map((data: any, index: number) => (
                 <div key={index} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                   <div style={{
                     width: '100%',
                     backgroundColor: index === csvLineData.slice(-6).length - 1 ? '#c9a574' : 'rgba(201, 165, 116, 0.3)',
-                    height: `${Math.max(20, (data.revenue / Math.max(...csvLineData.map((d: any) => d.revenue))) * 60)}px`,
+                    height: `${Math.max(20, (data.revenue / Math.max(...csvLineData.map((d: any) => d.revenue))) * (isMobile ? 50 : 60))}px`,
                     borderRadius: '4px 4px 0 0',
                     transition: 'all 0.3s ease'
                   }} />
                   <span style={{
-                    fontSize: '10px',
+                    fontSize: isMobile ? '9px' : '10px',
                     color: index === csvLineData.slice(-6).length - 1 ? '#c9a574' : 'rgba(255, 255, 255, 0.5)',
                     fontWeight: index === csvLineData.slice(-6).length - 1 ? '600' : '400'
                   }}>
@@ -200,11 +214,11 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               ))}
             </div>
 
-            <div style={{ marginTop: '16px' }}>
-              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px' }}>
+            <div style={{ marginTop: isMobile ? '12px' : '16px' }}>
+              <p style={{ fontSize: isMobile ? '12px' : '13px', color: 'rgba(255, 255, 255, 0.75)', marginBottom: '8px' }}>
                 Este mes tus artistas han generado
               </p>
-              <div style={{ fontSize: '32px', fontWeight: '700', color: '#c9a574' }}>
+              <div style={{ fontSize: isMobile ? '26px' : '32px', fontWeight: '700', color: '#c9a574' }}>
                 €{dashboardData.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
@@ -213,18 +227,18 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
           {/* Stats Card with Multiple Metrics */}
           <div style={{
             background: 'rgba(42, 63, 63, 0.6)',
-            borderRadius: '20px',
-            padding: '32px',
+            borderRadius: isMobile ? '12px' : '20px',
+            padding: isMobile ? '20px 24px' : '32px',
             border: '1px solid rgba(201, 165, 116, 0.15)',
             position: 'relative',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            gap: '28px',
-            height: '427px'
+            gap: isMobile ? '20px' : '28px',
+            height: isMobile ? 'auto' : '427px'
           }}>
             {/* Average Revenue per Artist - Más oscuro arriba */}
-            <div style={{ position: 'relative', zIndex: 1, minHeight: '100px' }}>
+            <div style={{ position: 'relative', zIndex: 1, minHeight: isMobile ? '80px' : '100px' }}>
               {/* Gráfico de barras difuminado dentro de Beneficios de BAM */}
               <div style={{
                 position: 'absolute',
@@ -235,9 +249,9 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 opacity: 0.25,
                 pointerEvents: 'none',
                 zIndex: 0,
-                minHeight: '100px'
+                minHeight: isMobile ? '80px' : '100px'
               }}>
-                <ResponsiveContainer width="100%" height={100}>
+                <ResponsiveContainer width="100%" height={isMobile ? 80 : 100}>
                   <BarChart
                     data={[
                       { value: 45 },
@@ -266,10 +280,10 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 </ResponsiveContainer>
               </div>
 
-              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.95)', marginBottom: '8px', fontWeight: '600', position: 'relative', zIndex: 2 }}>
+              <p style={{ fontSize: isMobile ? '12px' : '13px', color: 'rgba(255, 255, 255, 0.95)', marginBottom: '8px', fontWeight: '600', position: 'relative', zIndex: 2 }}>
                 Beneficios de Bam
               </p>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: '#c9a574', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.3)', position: 'relative', zIndex: 2 }}>
+              <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', color: '#c9a574', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.3)', position: 'relative', zIndex: 2 }}>
                 €{artists.reduce((sum, artist) => {
                   const contract = contracts.find(c => c.artistId === artist.id);
                   const bamPercentage = contract ? (100 - contract.percentage) / 100 : 0.30;
@@ -282,7 +296,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             <div style={{ height: '1px', background: 'rgba(201, 165, 116, 0.15)', position: 'relative', zIndex: 1 }} />
 
             {/* Total Streams - Más gris abajo */}
-            <div style={{ position: 'relative', zIndex: 1, minHeight: '100px' }}>
+            <div style={{ position: 'relative', zIndex: 1, minHeight: isMobile ? '80px' : '100px' }}>
               {/* Gráfico de barras difuminado dentro de Beneficios de Artistas */}
               <div style={{
                 position: 'absolute',
@@ -293,9 +307,9 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 opacity: 0.15,
                 pointerEvents: 'none',
                 zIndex: 0,
-                minHeight: '100px'
+                minHeight: isMobile ? '80px' : '100px'
               }}>
-                <ResponsiveContainer width="100%" height={100}>
+                <ResponsiveContainer width="100%" height={isMobile ? 80 : 100}>
                   <BarChart
                     data={[
                       { value: 35 },
@@ -324,10 +338,10 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 </ResponsiveContainer>
               </div>
 
-              <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '8px', fontWeight: '400', position: 'relative', zIndex: 2 }}>
+              <p style={{ fontSize: isMobile ? '12px' : '13px', color: 'rgba(255, 255, 255, 0.7)', marginBottom: '8px', fontWeight: '400', position: 'relative', zIndex: 2 }}>
                 Beneficio de Artistas
               </p>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: 'rgba(201, 165, 116, 0.7)', marginBottom: '4px', position: 'relative', zIndex: 2 }}>
+              <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', color: 'rgba(201, 165, 116, 0.7)', marginBottom: '4px', position: 'relative', zIndex: 2 }}>
                 €{artists.reduce((sum, artist) => {
                   const contract = contracts.find(c => c.artistId === artist.id);
                   const artistPercentage = contract ? contract.percentage / 100 : 0.70;
@@ -341,33 +355,33 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
         {/* Segunda fila */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 380px 295px',
-          gap: '16px',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 380px 295px',
+          gap: isMobile ? '12px' : '16px',
           width: '100%'
         }}>
           {/* Columna izquierda: Información Adicional y Nueva Sección */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: isMobile ? '12px' : '8px'
           }}>
             {/* Caja de Información Adicional */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
-              padding: '20px 32px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px 20px' : '20px 32px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
               backdropFilter: 'blur(10px)',
               width: '100%',
-              height: '205px',
+              height: isMobile ? 'auto' : '205px',
               display: 'flex',
               flexDirection: 'column'
             }}>
               <h3 style={{
-                fontSize: '20px',
+                fontSize: isMobile ? '16px' : '20px',
                 fontWeight: '600',
                 color: '#ffffff',
-                marginBottom: '16px'
+                marginBottom: isMobile ? '12px' : '16px'
               }}>
                 Artistas Pendientes de Solicitud
               </h3>
@@ -375,24 +389,24 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px',
+                  gap: isMobile ? '10px' : '8px',
                   overflowY: 'auto',
-                  maxHeight: '140px'
+                  maxHeight: isMobile ? '300px' : '140px'
                 }}>
                   {pendingRequests.map((request: any) => (
                     <div key={request.id} style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '8px 12px',
+                      padding: isMobile ? '10px' : '8px 12px',
                       background: 'rgba(201, 165, 116, 0.1)',
                       borderRadius: '8px',
                       border: '1px solid rgba(201, 165, 116, 0.15)'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{
-                          width: '32px',
-                          height: '32px',
+                          width: isMobile ? '36px' : '32px',
+                          height: isMobile ? '36px' : '32px',
                           borderRadius: '50%',
                           background: request.artistPhoto ? `url(${request.artistPhoto})` : '#c9a574',
                           backgroundSize: 'cover',
@@ -407,7 +421,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           {!request.artistPhoto && request.artistName.charAt(0).toUpperCase()}
                         </div>
                         <span style={{
-                          fontSize: '14px',
+                          fontSize: isMobile ? '15px' : '14px',
                           fontWeight: '500',
                           color: '#ffffff'
                         }}>
@@ -415,7 +429,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                         </span>
                       </div>
                       <span style={{
-                        fontSize: '14px',
+                        fontSize: isMobile ? '15px' : '14px',
                         fontWeight: '600',
                         color: '#c9a574'
                       }}>
@@ -426,10 +440,10 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 </div>
               ) : (
                 <p style={{
-                  fontSize: '14px',
+                  fontSize: isMobile ? '13px' : '14px',
                   color: 'rgba(255, 255, 255, 0.6)',
                   textAlign: 'center',
-                  marginTop: '32px'
+                  marginTop: isMobile ? '20px' : '32px'
                 }}>
                   No hay solicitudes pendientes
                 </p>
@@ -439,29 +453,30 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Nueva Sección - Ventas del Último Año */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
-              padding: '20px 32px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px 20px' : '20px 32px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
               backdropFilter: 'blur(10px)',
               width: '100%',
-              height: '418px',
+              height: isMobile ? 'auto' : '418px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              textAlign: 'center'
+              textAlign: 'center',
+              minHeight: isMobile ? '200px' : '418px'
             }}>
-              <TrendingUp size={64} color="#c9a574" style={{ opacity: 0.3, marginBottom: '16px' }} />
+              <TrendingUp size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, marginBottom: isMobile ? '12px' : '16px' }} />
               <h3 style={{
-                fontSize: '18px',
+                fontSize: isMobile ? '16px' : '18px',
                 fontWeight: '600',
                 color: '#ffffff',
-                marginBottom: '8px'
+                marginBottom: isMobile ? '6px' : '8px'
               }}>
                 Ventas del Último Año
               </h3>
               <p style={{
-                fontSize: '14px',
+                fontSize: isMobile ? '13px' : '14px',
                 color: 'rgba(255, 255, 255, 0.6)',
                 maxWidth: '300px'
               }}>
@@ -479,17 +494,17 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Caja 1 - Solicitudes de Royalties */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
-              padding: '16px 20px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px' : '16px 20px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
               backdropFilter: 'blur(10px)',
               width: '100%',
-              height: '205px',
+              height: isMobile ? 'auto' : '205px',
               display: 'flex',
               flexDirection: 'column'
             }}>
               <h4 style={{
-                fontSize: '16px',
+                fontSize: isMobile ? '15px' : '16px',
                 fontWeight: '600',
                 color: '#ffffff',
                 marginBottom: '10px'
@@ -499,7 +514,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px',
+                gap: isMobile ? '10px' : '8px',
                 overflowY: 'auto',
                 flex: 1
               }}>
@@ -515,15 +530,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        padding: '10px 12px',
+                        padding: isMobile ? '12px' : '10px 12px',
                         background: 'rgba(201, 165, 116, 0.1)',
                         borderRadius: '10px',
                         border: '1px solid rgba(201, 165, 116, 0.2)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                           <div style={{
-                            width: '34px',
-                            height: '34px',
+                            width: isMobile ? '38px' : '34px',
+                            height: isMobile ? '38px' : '34px',
                             borderRadius: '50%',
                             background: request.artistPhoto ? `url(${request.artistPhoto})` : '#c9a574',
                             backgroundSize: 'cover',
@@ -540,7 +555,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
-                              fontSize: '14px',
+                              fontSize: isMobile ? '15px' : '14px',
                               fontWeight: '600',
                               color: '#ffffff',
                               whiteSpace: 'nowrap',
@@ -550,7 +565,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                               {request.artistName}
                             </div>
                             <div style={{
-                              fontSize: '11px',
+                              fontSize: isMobile ? '12px' : '11px',
                               color: 'rgba(255, 255, 255, 0.5)',
                               marginTop: '2px'
                             }}>
@@ -559,7 +574,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           </div>
                         </div>
                         <div style={{
-                          fontSize: '13px',
+                          fontSize: isMobile ? '14px' : '13px',
                           fontWeight: '700',
                           color: '#c9a574',
                           whiteSpace: 'nowrap',
@@ -577,8 +592,9 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     justifyContent: 'center',
                     height: '100%',
                     color: 'rgba(255, 255, 255, 0.5)',
-                    fontSize: '13px',
-                    textAlign: 'center'
+                    fontSize: isMobile ? '12px' : '13px',
+                    textAlign: 'center',
+                    minHeight: isMobile ? '80px' : 'auto'
                   }}>
                     No hay solicitudes
                   </div>
@@ -589,12 +605,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Caja 2 - Transferencias */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
-              padding: '20px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px' : '20px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
               backdropFilter: 'blur(10px)',
               width: '100%',
-              height: '205px',
+              height: isMobile ? 'auto' : '205px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center'
@@ -602,12 +618,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px'
+                gap: isMobile ? '12px' : '16px'
               }}>
                 {/* Icono */}
                 <div style={{
-                  width: '50px',
-                  height: '50px',
+                  width: isMobile ? '44px' : '50px',
+                  height: isMobile ? '44px' : '50px',
                   borderRadius: '12px',
                   background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.2), rgba(201, 165, 116, 0.1))',
                   border: '1px solid rgba(201, 165, 116, 0.3)',
@@ -617,8 +633,8 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flexShrink: 0
                 }}>
                   <ArrowUpRight style={{
-                    width: '26px',
-                    height: '26px',
+                    width: isMobile ? '22px' : '26px',
+                    height: isMobile ? '22px' : '26px',
                     color: '#c9a574'
                   }} />
                 </div>
@@ -631,7 +647,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flex: 1
                 }}>
                   <h4 style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     fontWeight: '500',
                     color: 'rgba(255, 255, 255, 0.7)',
                     letterSpacing: '0.5px',
@@ -640,7 +656,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     Transferencias Realizadas
                   </h4>
                   <div style={{
-                    fontSize: '32px',
+                    fontSize: isMobile ? '28px' : '32px',
                     fontWeight: '700',
                     color: '#ffffff',
                     lineHeight: '1',
@@ -649,7 +665,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     {paymentRequests.filter(r => r.status === 'completed').length}
                   </div>
                   <p style={{
-                    fontSize: '11px',
+                    fontSize: isMobile ? '10px' : '11px',
                     color: 'rgba(255, 255, 255, 0.5)',
                     marginTop: '2px'
                   }}>
@@ -662,12 +678,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Caja 3 - Royalties Pendientes */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
-              padding: '20px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px' : '20px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
               backdropFilter: 'blur(10px)',
               width: '100%',
-              height: '205px',
+              height: isMobile ? 'auto' : '205px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center'
@@ -675,12 +691,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px'
+                gap: isMobile ? '12px' : '16px'
               }}>
                 {/* Icono */}
                 <div style={{
-                  width: '50px',
-                  height: '50px',
+                  width: isMobile ? '44px' : '50px',
+                  height: isMobile ? '44px' : '50px',
                   borderRadius: '12px',
                   background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1))',
                   border: '1px solid rgba(251, 191, 36, 0.3)',
@@ -690,8 +706,8 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flexShrink: 0
                 }}>
                   <Clock style={{
-                    width: '26px',
-                    height: '26px',
+                    width: isMobile ? '22px' : '26px',
+                    height: isMobile ? '22px' : '26px',
                     color: '#fbbf24'
                   }} />
                 </div>
@@ -704,7 +720,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flex: 1
                 }}>
                   <h4 style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     fontWeight: '500',
                     color: 'rgba(255, 255, 255, 0.7)',
                     letterSpacing: '0.5px',
@@ -713,7 +729,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     Royalties Pendientes
                   </h4>
                   <div style={{
-                    fontSize: '32px',
+                    fontSize: isMobile ? '28px' : '32px',
                     fontWeight: '700',
                     color: '#ffffff',
                     lineHeight: '1',
@@ -722,7 +738,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     €{pendingRequests.reduce((sum, req) => sum + req.amount, 0).toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </div>
                   <p style={{
-                    fontSize: '11px',
+                    fontSize: isMobile ? '10px' : '11px',
                     color: 'rgba(255, 255, 255, 0.5)',
                     marginTop: '2px'
                   }}>
@@ -737,17 +753,17 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: isMobile ? '12px' : '8px'
           }}>
             {/* Caja 4 - Gross Profit (Tarjeta Vertical) */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.4)',
               backdropFilter: 'blur(10px)',
-              borderRadius: '16px',
-              padding: '20px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px' : '20px',
               border: '2px solid rgba(42, 63, 63, 0.6)',
-              width: '290px',
-              height: '427px',
+              width: '100%',
+              height: isMobile ? 'auto' : '427px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -770,14 +786,14 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                gap: isMobile ? '12px' : '16px',
                 position: 'relative',
                 zIndex: 1
               }}>
                 {/* Icono */}
                 <div style={{
-                  width: '48px',
-                  height: '48px',
+                  width: isMobile ? '44px' : '48px',
+                  height: isMobile ? '44px' : '48px',
                   borderRadius: '12px',
                   background: 'rgba(0, 0, 0, 0.1)',
                   display: 'flex',
@@ -786,8 +802,8 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flexShrink: 0
                 }}>
                   <TrendingUp style={{
-                    width: '24px',
-                    height: '24px',
+                    width: isMobile ? '20px' : '24px',
+                    height: isMobile ? '20px' : '24px',
                     color: '#5a8a8a'
                   }} />
                 </div>
@@ -800,7 +816,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flex: 1
                 }}>
                   <h4 style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     fontWeight: '500',
                     color: 'rgba(255, 255, 255, 0.7)',
                     letterSpacing: '0.5px',
@@ -809,7 +825,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     Gross Profit
                   </h4>
                   <div style={{
-                    fontSize: '32px',
+                    fontSize: isMobile ? '28px' : '32px',
                     fontWeight: '700',
                     color: '#c9a574',
                     lineHeight: '1',
@@ -822,7 +838,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     }, 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p style={{
-                    fontSize: '11px',
+                    fontSize: isMobile ? '10px' : '11px',
                     color: 'rgba(255, 255, 255, 0.6)',
                     marginTop: '2px'
                   }}>
@@ -836,11 +852,11 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             <div style={{
               background: 'rgba(42, 63, 63, 0.4)',
               backdropFilter: 'blur(10px)',
-              borderRadius: '16px',
-              padding: '20px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px' : '20px',
               border: '2px solid rgba(42, 63, 63, 0.6)',
-              width: '290px',
-              height: '205px',
+              width: '100%',
+              height: isMobile ? 'auto' : '205px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -863,14 +879,14 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                gap: isMobile ? '12px' : '16px',
                 position: 'relative',
                 zIndex: 1
               }}>
                 {/* Icono */}
                 <div style={{
-                  width: '48px',
-                  height: '48px',
+                  width: isMobile ? '44px' : '48px',
+                  height: isMobile ? '44px' : '48px',
                   borderRadius: '12px',
                   background: 'rgba(0, 0, 0, 0.1)',
                   display: 'flex',
@@ -879,8 +895,8 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flexShrink: 0
                 }}>
                   <DollarSign style={{
-                    width: '24px',
-                    height: '24px',
+                    width: isMobile ? '20px' : '24px',
+                    height: isMobile ? '20px' : '24px',
                     color: '#5a8a8a'
                   }} />
                 </div>
@@ -893,7 +909,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   flex: 1
                 }}>
                   <h4 style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     fontWeight: '500',
                     color: 'rgba(255, 255, 255, 0.7)',
                     letterSpacing: '0.5px',
@@ -902,7 +918,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     Net Profit
                   </h4>
                   <div style={{
-                    fontSize: '32px',
+                    fontSize: isMobile ? '28px' : '32px',
                     fontWeight: '700',
                     color: '#c9a574',
                     lineHeight: '1',
@@ -915,7 +931,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     }, 0) * 0.85).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                   <p style={{
-                    fontSize: '11px',
+                    fontSize: isMobile ? '10px' : '11px',
                     color: 'rgba(255, 255, 255, 0.6)',
                     marginTop: '2px'
                   }}>
@@ -931,12 +947,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
 
         {/* Income Tab Content */}
         {financesTab === 'income' && (
-          <IncomeSection dashboardData={dashboardData} artists={artists} />
+          <IncomeSection dashboardData={dashboardData} artists={artists} isMobile={isMobile} />
         )}
 
         {/* Expenses Tab Content */}
         {financesTab === 'expenses' && (
-          <ExpensesSection dashboardData={dashboardData} artists={artists} />
+          <ExpensesSection dashboardData={dashboardData} artists={artists} isMobile={isMobile} />
         )}
 
         {/* Reports Tab Content */}
@@ -945,29 +961,30 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Filtros y Header */}
             <div style={{
               display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '24px',
-              flexWrap: 'wrap',
-              gap: '16px'
+              alignItems: isMobile ? 'stretch' : 'center',
+              marginBottom: isMobile ? '16px' : '24px',
+              gap: isMobile ? '12px' : '16px'
             }}>
               {/* Filtros de Período */}
               <div style={{
                 display: 'flex',
-                gap: '12px',
-                alignItems: 'center'
+                gap: isMobile ? '8px' : '12px',
+                alignItems: 'center',
+                flexWrap: 'wrap'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 16px',
+                  gap: isMobile ? '6px' : '8px',
+                  padding: isMobile ? '8px 12px' : '10px 16px',
                   background: 'rgba(42, 63, 63, 0.4)',
                   borderRadius: '12px',
                   border: '1px solid rgba(201, 165, 116, 0.2)'
                 }}>
-                  <Filter size={16} color="#c9a574" />
-                  <span style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500' }}>
+                  <Filter size={isMobile ? 14 : 16} color="#c9a574" />
+                  <span style={{ fontSize: isMobile ? '12px' : '13px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500' }}>
                     Período:
                   </span>
                   <select
@@ -977,7 +994,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       background: 'transparent',
                       border: 'none',
                       color: '#c9a574',
-                      fontSize: '13px',
+                      fontSize: isMobile ? '12px' : '13px',
                       fontWeight: '600',
                       cursor: 'pointer',
                       outline: 'none'
@@ -987,24 +1004,24 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     <option value="quarterly" style={{ background: '#2a3f3f' }}>Trimestral</option>
                     <option value="yearly" style={{ background: '#2a3f3f' }}>Anual</option>
                   </select>
-                  <ChevronDown size={14} color="#c9a574" />
+                  <ChevronDown size={isMobile ? 12 : 14} color="#c9a574" />
                 </div>
 
                 {reportPeriod === 'monthly' && (
                   <div style={{
                     display: 'flex',
-                    gap: '8px'
+                    gap: isMobile ? '6px' : '8px'
                   }}>
                     <select
                       value={reportMonth}
                       onChange={(e) => setReportMonth(Number(e.target.value))}
                       style={{
-                        padding: '10px 14px',
+                        padding: isMobile ? '8px 10px' : '10px 14px',
                         background: 'rgba(42, 63, 63, 0.4)',
                         border: '1px solid rgba(201, 165, 116, 0.2)',
                         borderRadius: '12px',
                         color: '#ffffff',
-                        fontSize: '13px',
+                        fontSize: isMobile ? '12px' : '13px',
                         fontWeight: '500',
                         cursor: 'pointer',
                         outline: 'none'
@@ -1018,12 +1035,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       value={reportYear}
                       onChange={(e) => setReportYear(Number(e.target.value))}
                       style={{
-                        padding: '10px 14px',
+                        padding: isMobile ? '8px 10px' : '10px 14px',
                         background: 'rgba(42, 63, 63, 0.4)',
                         border: '1px solid rgba(201, 165, 116, 0.2)',
                         borderRadius: '12px',
                         color: '#ffffff',
-                        fontSize: '13px',
+                        fontSize: isMobile ? '12px' : '13px',
                         fontWeight: '500',
                         cursor: 'pointer',
                         outline: 'none'
@@ -1045,17 +1062,19 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 24px',
+                  justifyContent: 'center',
+                  gap: isMobile ? '6px' : '8px',
+                  padding: isMobile ? '10px 18px' : '12px 24px',
                   background: 'linear-gradient(135deg, #c9a574 0%, #b8935d 100%)',
                   border: 'none',
                   borderRadius: '12px',
                   color: '#2a3f3f',
-                  fontSize: '14px',
+                  fontSize: isMobile ? '13px' : '14px',
                   fontWeight: '700',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(201, 165, 116, 0.3)'
+                  boxShadow: '0 4px 12px rgba(201, 165, 116, 0.3)',
+                  width: isMobile ? '100%' : 'auto'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
@@ -1066,7 +1085,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.3)';
                 }}
               >
-                <Download size={18} />
+                <Download size={isMobile ? 16 : 18} />
                 Descargar Reporte
               </button>
             </div>
@@ -1074,36 +1093,36 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Tarjetas de Resumen */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '16px',
-              marginBottom: '32px'
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+              gap: isMobile ? '12px' : '16px',
+              marginBottom: isMobile ? '20px' : '32px'
             }}>
               {/* Card 1: Ingresos del Período */}
               <div style={{
                 background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: isMobile ? '12px' : '16px',
+                padding: isMobile ? '18px' : '24px',
                 border: '1px solid rgba(201, 165, 116, 0.3)'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  marginBottom: '16px'
+                  gap: isMobile ? '10px' : '12px',
+                  marginBottom: isMobile ? '12px' : '16px'
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: isMobile ? '36px' : '40px',
+                    height: isMobile ? '36px' : '40px',
                     borderRadius: '12px',
                     background: 'rgba(201, 165, 116, 0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <TrendingUp size={20} color="#c9a574" />
+                    <TrendingUp size={isMobile ? 18 : 20} color="#c9a574" />
                   </div>
                   <span style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     color: 'rgba(255, 255, 255, 0.7)',
                     fontWeight: '600',
                     textTransform: 'uppercase',
@@ -1113,10 +1132,10 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   </span>
                 </div>
                 <div style={{
-                  fontSize: '28px',
+                  fontSize: isMobile ? '24px' : '28px',
                   fontWeight: '700',
                   color: '#c9a574',
-                  marginBottom: '8px'
+                  marginBottom: isMobile ? '6px' : '8px'
                 }}>
                   €{dashboardData.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                 </div>
@@ -1125,16 +1144,16 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   alignItems: 'center',
                   gap: '6px'
                 }}>
-                  <ArrowUpRight size={14} color="#4ade80" />
+                  <ArrowUpRight size={isMobile ? 12 : 14} color="#4ade80" />
                   <span style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     color: '#4ade80',
                     fontWeight: '600'
                   }}>
                     +12.5%
                   </span>
                   <span style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     color: 'rgba(255, 255, 255, 0.5)'
                   }}>
                     vs período anterior
@@ -1145,29 +1164,29 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               {/* Card 2: BAM Comisión */}
               <div style={{
                 background: 'rgba(42, 63, 63, 0.4)',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: isMobile ? '12px' : '16px',
+                padding: isMobile ? '18px' : '24px',
                 border: '1px solid rgba(255, 255, 255, 0.15)'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  marginBottom: '16px'
+                  gap: isMobile ? '10px' : '12px',
+                  marginBottom: isMobile ? '12px' : '16px'
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: isMobile ? '36px' : '40px',
+                    height: isMobile ? '36px' : '40px',
                     borderRadius: '12px',
                     background: 'rgba(201, 165, 116, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <DollarSign size={20} color="#c9a574" />
+                    <DollarSign size={isMobile ? 18 : 20} color="#c9a574" />
                   </div>
                   <span style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     color: 'rgba(255, 255, 255, 0.7)',
                     fontWeight: '600',
                     textTransform: 'uppercase',
@@ -1177,15 +1196,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   </span>
                 </div>
                 <div style={{
-                  fontSize: '28px',
+                  fontSize: isMobile ? '24px' : '28px',
                   fontWeight: '700',
                   color: '#ffffff',
-                  marginBottom: '8px'
+                  marginBottom: isMobile ? '6px' : '8px'
                 }}>
                   €{(dashboardData.totalRevenue * 0.3).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                 </div>
                 <div style={{
-                  fontSize: '12px',
+                  fontSize: isMobile ? '11px' : '12px',
                   color: 'rgba(255, 255, 255, 0.5)'
                 }}>
                   Comisión de gestión
@@ -1195,29 +1214,29 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               {/* Card 3: Artistas Pagos */}
               <div style={{
                 background: 'rgba(42, 63, 63, 0.4)',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: isMobile ? '12px' : '16px',
+                padding: isMobile ? '18px' : '24px',
                 border: '1px solid rgba(255, 255, 255, 0.15)'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  marginBottom: '16px'
+                  gap: isMobile ? '10px' : '12px',
+                  marginBottom: isMobile ? '12px' : '16px'
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: isMobile ? '36px' : '40px',
+                    height: isMobile ? '36px' : '40px',
                     borderRadius: '12px',
                     background: 'rgba(201, 165, 116, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <ArrowUpRight size={20} color="#c9a574" />
+                    <ArrowUpRight size={isMobile ? 18 : 20} color="#c9a574" />
                   </div>
                   <span style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     color: 'rgba(255, 255, 255, 0.7)',
                     fontWeight: '600',
                     textTransform: 'uppercase',
@@ -1227,15 +1246,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   </span>
                 </div>
                 <div style={{
-                  fontSize: '28px',
+                  fontSize: isMobile ? '24px' : '28px',
                   fontWeight: '700',
                   color: '#ffffff',
-                  marginBottom: '8px'
+                  marginBottom: isMobile ? '6px' : '8px'
                 }}>
                   €{(dashboardData.totalRevenue * 0.7).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                 </div>
                 <div style={{
-                  fontSize: '12px',
+                  fontSize: isMobile ? '11px' : '12px',
                   color: 'rgba(255, 255, 255, 0.5)'
                 }}>
                   Total pagado a artistas
@@ -1245,29 +1264,29 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               {/* Card 4: Gastos */}
               <div style={{
                 background: 'rgba(42, 63, 63, 0.4)',
-                borderRadius: '16px',
-                padding: '24px',
+                borderRadius: isMobile ? '12px' : '16px',
+                padding: isMobile ? '18px' : '24px',
                 border: '1px solid rgba(239, 68, 68, 0.2)'
               }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  marginBottom: '16px'
+                  gap: isMobile ? '10px' : '12px',
+                  marginBottom: isMobile ? '12px' : '16px'
                 }}>
                   <div style={{
-                    width: '40px',
-                    height: '40px',
+                    width: isMobile ? '36px' : '40px',
+                    height: isMobile ? '36px' : '40px',
                     borderRadius: '12px',
                     background: 'rgba(239, 68, 68, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <ArrowDownRight size={20} color="#ef4444" />
+                    <ArrowDownRight size={isMobile ? 18 : 20} color="#ef4444" />
                   </div>
                   <span style={{
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     color: 'rgba(255, 255, 255, 0.7)',
                     fontWeight: '600',
                     textTransform: 'uppercase',
@@ -1277,15 +1296,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   </span>
                 </div>
                 <div style={{
-                  fontSize: '28px',
+                  fontSize: isMobile ? '24px' : '28px',
                   fontWeight: '700',
                   color: '#ef4444',
-                  marginBottom: '8px'
+                  marginBottom: isMobile ? '6px' : '8px'
                 }}>
                   €{(dashboardData.totalRevenue * 0.15).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                 </div>
                 <div style={{
-                  fontSize: '12px',
+                  fontSize: isMobile ? '11px' : '12px',
                   color: 'rgba(255, 255, 255, 0.5)'
                 }}>
                   Operativos y distribución
@@ -1296,20 +1315,20 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Gráfico Comparativo */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
-              padding: '28px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px' : '28px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
-              marginBottom: '32px'
+              marginBottom: isMobile ? '20px' : '32px'
             }}>
               <h3 style={{
-                fontSize: '18px',
+                fontSize: isMobile ? '16px' : '18px',
                 fontWeight: '700',
                 color: '#ffffff',
-                marginBottom: '24px'
+                marginBottom: isMobile ? '16px' : '24px'
               }}>
                 Comparativa Ingresos vs Gastos
               </h3>
-              <div style={{ height: '300px' }}>
+              <div style={{ height: isMobile ? '250px' : '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={[
@@ -1320,17 +1339,17 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       { mes: 'May', ingresos: 55000, gastos: 9800 },
                       { mes: 'Jun', ingresos: 67000, gastos: 11200 }
                     ]}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: isMobile ? 10 : 30, left: isMobile ? 0 : 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
                     <XAxis
                       dataKey="mes"
                       stroke="rgba(255, 255, 255, 0.6)"
-                      style={{ fontSize: '12px' }}
+                      style={{ fontSize: isMobile ? '10px' : '12px' }}
                     />
                     <YAxis
                       stroke="rgba(255, 255, 255, 0.6)"
-                      style={{ fontSize: '12px' }}
+                      style={{ fontSize: isMobile ? '10px' : '12px' }}
                       tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
@@ -1338,7 +1357,8 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                         background: 'rgba(42, 63, 63, 0.95)',
                         border: '1px solid rgba(201, 165, 116, 0.3)',
                         borderRadius: '8px',
-                        color: '#ffffff'
+                        color: '#ffffff',
+                        fontSize: isMobile ? '12px' : '14px'
                       }}
                       formatter={(value: any) => [`€${value.toLocaleString()}`, '']}
                       labelStyle={{ color: '#c9a574' }}
@@ -1347,18 +1367,18 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       type="monotone" 
                       dataKey="ingresos" 
                       stroke="#c9a574" 
-                      strokeWidth={3}
-                      dot={{ fill: '#c9a574', r: 5 }}
-                      activeDot={{ r: 7 }}
+                      strokeWidth={isMobile ? 2 : 3}
+                      dot={{ fill: '#c9a574', r: isMobile ? 3 : 5 }}
+                      activeDot={{ r: isMobile ? 5 : 7 }}
                       name="Ingresos"
                     />
                     <Line 
                       type="monotone" 
                       dataKey="gastos" 
                       stroke="#ef4444" 
-                      strokeWidth={3}
-                      dot={{ fill: '#ef4444', r: 5 }}
-                      activeDot={{ r: 7 }}
+                      strokeWidth={isMobile ? 2 : 3}
+                      dot={{ fill: '#ef4444', r: isMobile ? 3 : 5 }}
+                      activeDot={{ r: isMobile ? 5 : 7 }}
                       name="Gastos"
                     />
                   </LineChart>
@@ -1369,16 +1389,16 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Lista de Reportes Generados */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
+              borderRadius: isMobile ? '12px' : '16px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
               overflow: 'hidden'
             }}>
               <div style={{
-                padding: '24px',
+                padding: isMobile ? '16px' : '24px',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
               }}>
                 <h3 style={{
-                  fontSize: '18px',
+                  fontSize: isMobile ? '16px' : '18px',
                   fontWeight: '700',
                   color: '#ffffff',
                   margin: 0
@@ -1397,11 +1417,13 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   <div
                     key={index}
                     style={{
-                      padding: '20px 24px',
+                      padding: isMobile ? '14px 16px' : '20px 24px',
                       borderBottom: index < 4 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
                       display: 'flex',
-                      alignItems: 'center',
+                      flexDirection: isMobile ? 'column' : 'row',
+                      alignItems: isMobile ? 'flex-start' : 'center',
                       justifyContent: 'space-between',
+                      gap: isMobile ? '12px' : '0',
                       transition: 'background 0.2s ease',
                       cursor: 'pointer'
                     }}
@@ -1412,49 +1434,55 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       e.currentTarget.style.background = 'transparent';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '16px', flex: 1 }}>
                       <div style={{
-                        width: '44px',
-                        height: '44px',
+                        width: isMobile ? '40px' : '44px',
+                        height: isMobile ? '40px' : '44px',
                         borderRadius: '12px',
                         background: 'rgba(201, 165, 116, 0.15)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}>
-                        <FileText size={20} color="#c9a574" />
+                        <FileText size={isMobile ? 18 : 20} color="#c9a574" />
                       </div>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontSize: '14px',
+                          fontSize: isMobile ? '13px' : '14px',
                           fontWeight: '600',
                           color: '#ffffff',
-                          marginBottom: '4px'
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
                         }}>
                           {report.name}
                         </div>
                         <div style={{
-                          fontSize: '12px',
+                          fontSize: isMobile ? '11px' : '12px',
                           color: 'rgba(255, 255, 255, 0.5)'
                         }}>
                           {report.date} · {report.size} · {report.type}
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: isMobile ? '8px' : '12px', width: isMobile ? '100%' : 'auto' }}>
                       <button
                         onClick={() => alert('Vista previa del reporte')}
                         style={{
-                          padding: '8px 16px',
+                          flex: isMobile ? 1 : 'initial',
+                          padding: isMobile ? '8px 14px' : '8px 16px',
                           background: 'rgba(201, 165, 116, 0.1)',
                           border: '1px solid rgba(201, 165, 116, 0.3)',
                           borderRadius: '8px',
                           color: '#c9a574',
-                          fontSize: '13px',
+                          fontSize: isMobile ? '12px' : '13px',
                           fontWeight: '600',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
+                          justifyContent: 'center',
                           gap: '6px',
                           transition: 'all 0.2s ease'
                         }}
@@ -1465,22 +1493,24 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           e.currentTarget.style.background = 'rgba(201, 165, 116, 0.1)';
                         }}
                       >
-                        <Eye size={14} />
+                        <Eye size={isMobile ? 12 : 14} />
                         Ver
                       </button>
                       <button
                         onClick={() => alert('Descargando reporte...')}
                         style={{
-                          padding: '8px 16px',
+                          flex: isMobile ? 1 : 'initial',
+                          padding: isMobile ? '8px 14px' : '8px 16px',
                           background: 'rgba(201, 165, 116, 0.1)',
                           border: '1px solid rgba(201, 165, 116, 0.3)',
                           borderRadius: '8px',
                           color: '#c9a574',
-                          fontSize: '13px',
+                          fontSize: isMobile ? '12px' : '13px',
                           fontWeight: '600',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
+                          justifyContent: 'center',
                           gap: '6px',
                           transition: 'all 0.2s ease'
                         }}
@@ -1491,7 +1521,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           e.currentTarget.style.background = 'rgba(201, 165, 116, 0.1)';
                         }}
                       >
-                        <Download size={14} />
+                        <Download size={isMobile ? 12 : 14} />
                         Descargar
                       </button>
                     </div>
@@ -1508,15 +1538,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             {/* Header */}
             <div style={{
               background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: '16px',
-              padding: '24px',
+              borderRadius: isMobile ? '12px' : '16px',
+              padding: isMobile ? '16px' : '24px',
               border: '1px solid rgba(201, 165, 116, 0.2)',
-              marginBottom: '24px'
+              marginBottom: isMobile ? '16px' : '24px'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '16px' : '0' }}>
                 <div>
                   <h2 style={{
-                    fontSize: '24px',
+                    fontSize: isMobile ? '18px' : '24px',
                     fontWeight: '700',
                     color: '#ffffff',
                     marginBottom: '8px'
@@ -1524,7 +1554,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     Solicitudes de Pago
                   </h2>
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: isMobile ? '13px' : '14px',
                     color: 'rgba(255, 255, 255, 0.6)'
                   }}>
                     Gestiona las solicitudes de royalties de tus artistas
@@ -1532,24 +1562,26 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 </div>
                 <div style={{
                   display: 'flex',
-                  gap: '16px'
+                  gap: isMobile ? '12px' : '16px',
+                  width: isMobile ? '100%' : 'auto'
                 }}>
                   <div style={{
                     textAlign: 'center',
-                    padding: '12px 24px',
+                    padding: isMobile ? '10px 16px' : '12px 24px',
                     background: 'rgba(255, 255, 255, 0.1)',
                     borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    flex: isMobile ? 1 : 'initial'
                   }}>
                     <div style={{
-                      fontSize: '24px',
+                      fontSize: isMobile ? '20px' : '24px',
                       fontWeight: '700',
                       color: '#ffffff'
                     }}>
                       {pendingRequests.length}
                     </div>
                     <div style={{
-                      fontSize: '12px',
+                      fontSize: isMobile ? '11px' : '12px',
                       color: 'rgba(255, 255, 255, 0.6)',
                       marginTop: '4px'
                     }}>
@@ -1558,20 +1590,21 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   </div>
                   <div style={{
                     textAlign: 'center',
-                    padding: '12px 24px',
+                    padding: isMobile ? '10px 16px' : '12px 24px',
                     background: 'rgba(201, 165, 116, 0.15)',
                     borderRadius: '12px',
-                    border: '1px solid rgba(201, 165, 116, 0.3)'
+                    border: '1px solid rgba(201, 165, 116, 0.3)',
+                    flex: isMobile ? 1 : 'initial'
                   }}>
                     <div style={{
-                      fontSize: '24px',
+                      fontSize: isMobile ? '20px' : '24px',
                       fontWeight: '700',
                       color: '#c9a574'
                     }}>
                       {paymentRequests.filter(r => r.status === 'completed').length}
                     </div>
                     <div style={{
-                      fontSize: '12px',
+                      fontSize: isMobile ? '11px' : '12px',
                       color: 'rgba(255, 255, 255, 0.6)',
                       marginTop: '4px'
                     }}>
@@ -1586,26 +1619,26 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
             <div style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: isMobile ? '12px' : '16px'
             }}>
               {paymentRequests.length === 0 ? (
                 <div style={{
                   background: 'rgba(42, 63, 63, 0.3)',
-                  borderRadius: '16px',
+                  borderRadius: isMobile ? '12px' : '16px',
                   border: '1px solid rgba(201, 165, 116, 0.2)',
-                  padding: '64px',
+                  padding: isMobile ? '48px 24px' : '64px',
                   textAlign: 'center'
                 }}>
-                  <DollarSign size={48} style={{ margin: '0 auto 16px', opacity: 0.3, color: '#c9a574' }} />
+                  <DollarSign size={isMobile ? 40 : 48} style={{ margin: '0 auto 16px', opacity: 0.3, color: '#c9a574' }} />
                   <p style={{
-                    fontSize: '16px',
+                    fontSize: isMobile ? '14px' : '16px',
                     color: 'rgba(255, 255, 255, 0.5)',
                     marginBottom: '8px'
                   }}>
                     No hay solicitudes de pago
                   </p>
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: isMobile ? '13px' : '14px',
                     color: 'rgba(255, 255, 255, 0.4)'
                   }}>
                     Las solicitudes de los artistas aparecerán aquí
@@ -1618,34 +1651,40 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       key={request.id}
                       style={{
                         background: 'rgba(42, 63, 63, 0.4)',
-                        borderRadius: '16px',
+                        borderRadius: isMobile ? '12px' : '16px',
                         border: '1px solid rgba(201, 165, 116, 0.2)',
-                        padding: '28px 32px',
+                        padding: isMobile ? '16px' : '28px 32px',
                         transition: 'all 0.3s ease',
                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(42, 63, 63, 0.5)';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(201, 165, 116, 0.15)';
+                        if (!isMobile) {
+                          e.currentTarget.style.background = 'rgba(42, 63, 63, 0.5)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 8px 24px rgba(201, 165, 116, 0.15)';
+                        }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(42, 63, 63, 0.4)';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+                        if (!isMobile) {
+                          e.currentTarget.style.background = 'rgba(42, 63, 63, 0.4)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+                        }
                       }}
                     >
                       {/* Header Row: ID + Estado + Acciones */}
                       <div style={{
                         display: 'flex',
+                        flexDirection: isMobile ? 'column' : 'row',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '20px',
-                        paddingBottom: '16px',
-                        borderBottom: '1px solid rgba(201, 165, 116, 0.15)'
+                        alignItems: isMobile ? 'flex-start' : 'center',
+                        marginBottom: isMobile ? '12px' : '20px',
+                        paddingBottom: isMobile ? '12px' : '16px',
+                        borderBottom: '1px solid rgba(201, 165, 116, 0.15)',
+                        gap: isMobile ? '12px' : '0'
                       }}>
                         <div style={{
-                          fontSize: '12px',
+                          fontSize: isMobile ? '11px' : '12px',
                           color: 'rgba(255, 255, 255, 0.5)',
                           fontWeight: '600',
                           letterSpacing: '0.5px'
@@ -1653,15 +1692,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           ID #{request.id.toString().slice(-4)}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
                           {/* Estado */}
                           <div style={{
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
-                          padding: '8px 14px',
+                          padding: isMobile ? '6px 12px' : '8px 14px',
                           borderRadius: '12px',
-                          fontSize: '12px',
+                          fontSize: isMobile ? '11px' : '12px',
                           fontWeight: '700',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
@@ -1710,7 +1749,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
 
                         {/* Acciones */}
                         {request.status === 'pending' && (
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div style={{ display: 'flex', gap: isMobile ? '6px' : '8px', width: isMobile ? '100%' : 'auto' }}>
                             <button
                               onClick={() => {
                                 if (setPaymentRequests) {
@@ -1740,16 +1779,18 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                                 }
                               }}
                               style={{
-                                padding: '10px 18px',
+                                flex: isMobile ? 1 : 'initial',
+                                padding: isMobile ? '8px 14px' : '10px 18px',
                                 background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.25) 0%, rgba(181, 145, 96, 0.2) 100%)',
                                 border: '1.5px solid rgba(201, 165, 116, 0.5)',
                                 borderRadius: '10px',
                                 color: '#e5c590',
-                                fontSize: '12px',
+                                fontSize: isMobile ? '11px' : '12px',
                                 fontWeight: '700',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '6px',
                                 transition: 'all 0.3s ease',
                                 boxShadow: '0 4px 12px rgba(201, 165, 116, 0.15)',
@@ -1767,7 +1808,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.15)';
                               }}
                             >
-                              <Check size={16} strokeWidth={3} />
+                              <Check size={isMobile ? 14 : 16} strokeWidth={3} />
                               Aprobar
                             </button>
                             <button
@@ -1789,16 +1830,18 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                                 }
                               }}
                               style={{
-                                padding: '10px 18px',
+                                flex: isMobile ? 1 : 'initial',
+                                padding: isMobile ? '8px 14px' : '10px 18px',
                                 background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.3) 0%, rgba(62, 83, 83, 0.2) 100%)',
                                 border: '1.5px solid rgba(175, 179, 183, 0.4)',
                                 borderRadius: '10px',
                                 color: '#AFB3B7',
-                                fontSize: '12px',
+                                fontSize: isMobile ? '11px' : '12px',
                                 fontWeight: '700',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '6px',
                                 transition: 'all 0.3s ease',
                                 boxShadow: '0 4px 12px rgba(42, 63, 63, 0.2)',
@@ -1816,7 +1859,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                                 e.currentTarget.style.boxShadow = '0 4px 12px rgba(42, 63, 63, 0.2)';
                               }}
                             >
-                              <X size={16} strokeWidth={3} />
+                              <X size={isMobile ? 14 : 16} strokeWidth={3} />
                               Rechazar
                             </button>
                           </div>
@@ -1826,15 +1869,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            padding: '10px 18px',
+                            padding: isMobile ? '8px 14px' : '10px 18px',
                             background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.2) 0%, rgba(181, 145, 96, 0.15) 100%)',
                             borderRadius: '10px',
                             border: '1.5px solid rgba(201, 165, 116, 0.4)',
                             boxShadow: '0 0 15px rgba(201, 165, 116, 0.2)'
                           }}>
-                            <Check size={16} color="#c9a574" strokeWidth={3} />
+                            <Check size={isMobile ? 14 : 16} color="#c9a574" strokeWidth={3} />
                             <span style={{
-                              fontSize: '12px',
+                              fontSize: isMobile ? '11px' : '12px',
                               fontWeight: '700',
                               color: '#c9a574',
                               textTransform: 'uppercase',
@@ -1850,15 +1893,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       {/* Content Grid */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'auto 1fr auto auto',
-                      gap: '32px',
+                      gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr auto auto',
+                      gap: isMobile ? '16px' : '32px',
                       alignItems: 'center'
                     }}>
                       {/* Artista */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '16px' }}>
                         <div style={{
-                          width: '56px',
-                          height: '56px',
+                          width: isMobile ? '48px' : '56px',
+                          height: isMobile ? '48px' : '56px',
                           borderRadius: '50%',
                           background: request.artistPhoto ? `url(${request.artistPhoto})` : '#c9a574',
                           backgroundSize: 'cover',
@@ -1866,7 +1909,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '20px',
+                          fontSize: isMobile ? '18px' : '20px',
                           fontWeight: '700',
                           color: '#2a3f3f',
                           flexShrink: 0,
@@ -1877,7 +1920,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                         </div>
                         <div>
                           <div style={{
-                            fontSize: '16px',
+                            fontSize: isMobile ? '15px' : '16px',
                             fontWeight: '700',
                             color: '#ffffff',
                             marginBottom: '4px'
@@ -1885,7 +1928,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                             {request.artistName}
                           </div>
                           <div style={{
-                            fontSize: '12px',
+                            fontSize: isMobile ? '11px' : '12px',
                             color: 'rgba(255, 255, 255, 0.5)'
                           }}>
                             Artista
@@ -1896,7 +1939,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       {/* Beneficiario */}
                       <div>
                         <div style={{
-                          fontSize: '11px',
+                          fontSize: isMobile ? '10px' : '11px',
                           color: 'rgba(255, 255, 255, 0.5)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
@@ -1905,7 +1948,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           Beneficiario
                         </div>
                         <div style={{
-                          fontSize: '15px',
+                          fontSize: isMobile ? '14px' : '15px',
                           color: '#ffffff',
                           fontWeight: '600',
                           marginBottom: '4px'
@@ -1913,18 +1956,21 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           {request.firstName} {request.lastName}
                         </div>
                         <div style={{
-                          fontSize: '12px',
+                          fontSize: isMobile ? '11px' : '12px',
                           color: 'rgba(255, 255, 255, 0.5)',
-                          fontFamily: 'monospace'
+                          fontFamily: 'monospace',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
                         }}>
                           {request.accountNumber}
                         </div>
                       </div>
 
                       {/* Monto */}
-                      <div style={{ textAlign: 'right' }}>
+                      <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                         <div style={{
-                          fontSize: '11px',
+                          fontSize: isMobile ? '10px' : '11px',
                           color: 'rgba(255, 255, 255, 0.5)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
@@ -1933,7 +1979,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           Monto
                         </div>
                         <div style={{
-                          fontSize: '24px',
+                          fontSize: isMobile ? '20px' : '24px',
                           fontWeight: '700',
                           color: '#c9a574',
                           letterSpacing: '-0.5px'
@@ -1943,9 +1989,9 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                       </div>
 
                       {/* Fecha */}
-                      <div style={{ textAlign: 'right' }}>
+                      <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                         <div style={{
-                          fontSize: '11px',
+                          fontSize: isMobile ? '10px' : '11px',
                           color: 'rgba(255, 255, 255, 0.5)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px',
@@ -1954,7 +2000,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           Fecha Solicitud
                         </div>
                         <div style={{
-                          fontSize: '14px',
+                          fontSize: isMobile ? '13px' : '14px',
                           color: 'rgba(255, 255, 255, 0.8)',
                           fontWeight: '600'
                         }}>
