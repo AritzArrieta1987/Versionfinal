@@ -1,501 +1,397 @@
-import { TrendingUp, DollarSign, ArrowUpRight, Download } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, Users, Music, DollarSign } from 'lucide-react';
 
 interface IncomeSectionProps {
   dashboardData: any;
   artists: any[];
+  isMobile?: boolean;
 }
 
-export function IncomeSection({ dashboardData, artists }: IncomeSectionProps) {
-  // Colores para el gráfico de pastel
-  const COLORS = ['#c9a574', '#b8935d', '#a68251', '#947045', '#826039'];
-
-  // Datos de ingresos por artista
-  const artistIncomeData = artists.map((artist, index) => ({
-    name: artist.name,
-    value: artist.totalRevenue || 0,
-    color: COLORS[index % COLORS.length]
-  }));
-
-  // Datos de ingresos por plataforma (mock)
-  const platformData = [
-    { name: 'Spotify', revenue: dashboardData.totalRevenue * 0.45 },
-    { name: 'Apple Music', revenue: dashboardData.totalRevenue * 0.25 },
-    { name: 'YouTube Music', revenue: dashboardData.totalRevenue * 0.15 },
-    { name: 'Amazon Music', revenue: dashboardData.totalRevenue * 0.10 },
-    { name: 'Otros', revenue: dashboardData.totalRevenue * 0.05 }
-  ];
+export function IncomeSection({ dashboardData, artists, isMobile = false }: IncomeSectionProps) {
+  const topArtists = artists
+    .map(artist => {
+      const monthlyData = dashboardData.monthlyData || [];
+      const artistRevenue = monthlyData.reduce((sum: number, month: any) => {
+        const artistData = month.artists?.find((a: any) => a.id === artist.id);
+        return sum + (artistData?.revenue || 0);
+      }, 0);
+      return { ...artist, revenue: artistRevenue };
+    })
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
 
   return (
     <div>
-      {/* Header Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '16px',
-        marginBottom: '32px'
+      {/* Cards superiores */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: isMobile ? '12px' : '20px',
+        marginBottom: isMobile ? '20px' : '32px'
       }}>
-        {/* Total Ingresos */}
+        {/* Ingresos por Streaming */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)',
+          borderRadius: isMobile ? '12px' : '16px',
+          padding: isMobile ? '18px' : '24px',
+          border: '1px solid rgba(34, 197, 94, 0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+            <div style={{
+              width: isMobile ? '40px' : '48px',
+              height: isMobile ? '40px' : '48px',
+              borderRadius: '12px',
+              background: 'rgba(34, 197, 94, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Music size={isMobile ? 20 : 24} color="#22c55e" />
+            </div>
+            <div>
+              <p style={{ 
+                fontSize: isMobile ? '12px' : '13px', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                margin: 0 
+              }}>
+                Streaming
+              </p>
+              <h3 style={{ 
+                fontSize: isMobile ? '20px' : '24px', 
+                fontWeight: '700', 
+                color: '#22c55e', 
+                margin: '4px 0 0 0' 
+              }}>
+                €{(dashboardData.totalRevenue * 0.85).toLocaleString()}
+              </h3>
+            </div>
+          </div>
+          <p style={{ 
+            fontSize: isMobile ? '12px' : '13px', 
+            color: 'rgba(255, 255, 255, 0.6)', 
+            margin: 0 
+          }}>
+            85% del total
+          </p>
+        </div>
+
+        {/* Ingresos por Ventas */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)',
+          borderRadius: isMobile ? '12px' : '16px',
+          padding: isMobile ? '18px' : '24px',
+          border: '1px solid rgba(59, 130, 246, 0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+            <div style={{
+              width: isMobile ? '40px' : '48px',
+              height: isMobile ? '40px' : '48px',
+              borderRadius: '12px',
+              background: 'rgba(59, 130, 246, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <DollarSign size={isMobile ? 20 : 24} color="#3b82f6" />
+            </div>
+            <div>
+              <p style={{ 
+                fontSize: isMobile ? '12px' : '13px', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                margin: 0 
+              }}>
+                Ventas Digitales
+              </p>
+              <h3 style={{ 
+                fontSize: isMobile ? '20px' : '24px', 
+                fontWeight: '700', 
+                color: '#3b82f6', 
+                margin: '4px 0 0 0' 
+              }}>
+                €{(dashboardData.totalRevenue * 0.15).toLocaleString()}
+              </h3>
+            </div>
+          </div>
+          <p style={{ 
+            fontSize: isMobile ? '12px' : '13px', 
+            color: 'rgba(255, 255, 255, 0.6)', 
+            margin: 0 
+          }}>
+            15% del total
+          </p>
+        </div>
+
+        {/* Total Artistas */}
         <div style={{
           background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(201, 165, 116, 0.3)'
+          borderRadius: isMobile ? '12px' : '16px',
+          padding: isMobile ? '18px' : '24px',
+          border: '1px solid rgba(201, 165, 116, 0.2)'
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
+              width: isMobile ? '40px' : '48px',
+              height: isMobile ? '40px' : '48px',
               borderRadius: '12px',
               background: 'rgba(201, 165, 116, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <TrendingUp size={24} color="#c9a574" />
+              <Users size={isMobile ? 20 : 24} color="#c9a574" />
             </div>
-            <span style={{
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Total Ingresos
-            </span>
-          </div>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            color: '#c9a574',
-            marginBottom: '8px'
-          }}>
-            €{dashboardData.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
-            <ArrowUpRight size={14} color="#4ade80" />
-            <span style={{ fontSize: '12px', color: '#4ade80', fontWeight: '600' }}>
-              +15.3%
-            </span>
-            <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
-              vs mes anterior
-            </span>
-          </div>
-        </div>
-
-        {/* Promedio por Artista */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.4)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.15)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'rgba(201, 165, 116, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <DollarSign size={24} color="#c9a574" />
-            </div>
-            <span style={{
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Promedio / Artista
-            </span>
-          </div>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            color: '#ffffff',
-            marginBottom: '8px'
-          }}>
-            €{(dashboardData.totalRevenue / Math.max(artists.length, 1)).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
-            {artists.length} artistas activos
-          </div>
-        </div>
-
-        {/* Total Streams */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.4)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.15)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'rgba(201, 165, 116, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <TrendingUp size={24} color="#c9a574" />
-            </div>
-            <span style={{
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Total Streams
-            </span>
-          </div>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            color: '#ffffff',
-            marginBottom: '8px'
-          }}>
-            {dashboardData.totalStreams.toLocaleString('es-ES')}
-          </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
-            Reproducciones totales
-          </div>
-        </div>
-      </div>
-
-      {/* Gráficos */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gap: '16px',
-        marginBottom: '32px'
-      }}>
-        {/* Ingresos por Plataforma */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.3)',
-          borderRadius: '16px',
-          padding: '28px',
-          border: '1px solid rgba(201, 165, 116, 0.2)'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#ffffff',
-            marginBottom: '24px'
-          }}>
-            Ingresos por Plataforma
-          </h3>
-          <div style={{ height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={platformData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="rgba(255, 255, 255, 0.6)"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis 
-                  stroke="rgba(255, 255, 255, 0.6)"
-                  style={{ fontSize: '12px' }}
-                  tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(42, 63, 63, 0.95)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
-                    borderRadius: '8px',
-                    color: '#ffffff'
-                  }}
-                  formatter={(value: any) => [`€${value.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`, '']}
-                  labelStyle={{ color: '#c9a574' }}
-                />
-                <Bar dataKey="revenue" fill="#c9a574" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Distribución por Artista */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.3)',
-          borderRadius: '16px',
-          padding: '28px',
-          border: '1px solid rgba(201, 165, 116, 0.2)'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#ffffff',
-            marginBottom: '24px'
-          }}>
-            Por Artista
-          </h3>
-          <div style={{ height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={artistIncomeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.name}: €${(entry.value / 1000).toFixed(1)}k`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {artistIncomeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(42, 63, 63, 0.95)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
-                    borderRadius: '8px',
-                    color: '#ffffff'
-                  }}
-                  formatter={(value: any) => [`€${value.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`, '']}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabla de Detalles */}
-      <div style={{
-        background: 'rgba(42, 63, 63, 0.3)',
-        borderRadius: '16px',
-        border: '1px solid rgba(201, 165, 116, 0.2)',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#ffffff',
-            margin: 0
-          }}>
-            Detalle de Ingresos por Artista
-          </h3>
-          <button
-            onClick={() => alert('Exportando a Excel...')}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(201, 165, 116, 0.1)',
-              border: '1px solid rgba(201, 165, 116, 0.3)',
-              borderRadius: '8px',
-              color: '#c9a574',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(201, 165, 116, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(201, 165, 116, 0.1)';
-            }}
-          >
-            <Download size={14} />
-            Exportar
-          </button>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{
-                background: 'rgba(0, 0, 0, 0.2)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            <div>
+              <p style={{ 
+                fontSize: isMobile ? '12px' : '13px', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                margin: 0 
               }}>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'left',
-                  fontSize: '12px',
+                Artistas Activos
+              </p>
+              <h3 style={{ 
+                fontSize: isMobile ? '20px' : '24px', 
+                fontWeight: '700', 
+                color: '#c9a574', 
+                margin: '4px 0 0 0' 
+              }}>
+                {dashboardData.totalArtists || 0}
+              </h3>
+            </div>
+          </div>
+          <p style={{ 
+            fontSize: isMobile ? '12px' : '13px', 
+            color: 'rgba(255, 255, 255, 0.6)', 
+            margin: 0 
+          }}>
+            Generando ingresos
+          </p>
+        </div>
+      </div>
+
+      {/* Top Artistas */}
+      <div style={{
+        background: 'rgba(42, 63, 63, 0.4)',
+        borderRadius: isMobile ? '12px' : '16px',
+        padding: isMobile ? '16px' : '24px',
+        border: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          marginBottom: isMobile ? '16px' : '24px' 
+        }}>
+          <TrendingUp size={isMobile ? 22 : 24} color="#c9a574" />
+          <h3 style={{ 
+            fontSize: isMobile ? '16px' : '18px', 
+            fontWeight: '600', 
+            color: '#ffffff', 
+            margin: 0 
+          }}>
+            Top 5 Artistas por Ingresos
+          </h3>
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: isMobile ? '12px' : '16px' 
+        }}>
+          {topArtists.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: isMobile ? '32px 16px' : '48px',
+              color: 'rgba(255, 255, 255, 0.5)' 
+            }}>
+              <Users size={isMobile ? 48 : 56} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+              <p style={{ fontSize: isMobile ? '14px' : '16px', margin: 0 }}>
+                No hay datos de artistas disponibles
+              </p>
+            </div>
+          ) : (
+            topArtists.map((artist, index) => (
+              <div
+                key={artist.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: isMobile ? '12px' : '16px',
+                  padding: isMobile ? '14px' : '16px',
+                  background: index === 0 
+                    ? 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)'
+                    : 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: isMobile ? '10px' : '12px',
+                  border: index === 0 
+                    ? '1px solid rgba(201, 165, 116, 0.3)'
+                    : '1px solid rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                {/* Ranking */}
+                <div style={{
+                  width: isMobile ? '32px' : '36px',
+                  height: isMobile ? '32px' : '36px',
+                  borderRadius: '50%',
+                  background: index === 0 ? '#c9a574' : 'rgba(255, 255, 255, 0.1)',
+                  color: index === 0 ? '#2a3f3f' : '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  fontSize: isMobile ? '15px' : '16px',
+                  flexShrink: 0
                 }}>
-                  Artista
-                </th>
-                <th style={{
-                  padding: '16px 24px',
+                  {index + 1}
+                </div>
+
+                {/* Foto */}
+                <div style={{
+                  width: isMobile ? '48px' : '56px',
+                  height: isMobile ? '48px' : '56px',
+                  borderRadius: '50%',
+                  background: artist.photo ? `url(${artist.photo})` : '#c9a574',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#2a3f3f',
+                  fontWeight: '600',
+                  fontSize: isMobile ? '18px' : '20px',
+                  flexShrink: 0,
+                  border: index === 0 ? '2px solid #c9a574' : 'none'
+                }}>
+                  {!artist.photo && artist.name.charAt(0)}
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h4 style={{ 
+                    fontSize: isMobile ? '15px' : '16px', 
+                    fontWeight: '600', 
+                    color: '#ffffff', 
+                    margin: '0 0 4px 0',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {artist.name}
+                  </h4>
+                  <p style={{ 
+                    fontSize: isMobile ? '12px' : '13px', 
+                    color: 'rgba(255, 255, 255, 0.6)', 
+                    margin: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {artist.email}
+                  </p>
+                </div>
+
+                {/* Revenue */}
+                <div style={{ 
                   textAlign: 'right',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  minWidth: isMobile ? '80px' : '100px'
                 }}>
-                  Streams
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  <p style={{ 
+                    fontSize: isMobile ? '18px' : '20px', 
+                    fontWeight: '700', 
+                    color: index === 0 ? '#c9a574' : '#ffffff', 
+                    margin: 0 
+                  }}>
+                    €{artist.revenue.toLocaleString()}
+                  </p>
+                  <p style={{ 
+                    fontSize: isMobile ? '11px' : '12px', 
+                    color: 'rgba(255, 255, 255, 0.5)', 
+                    margin: '2px 0 0 0' 
+                  }}>
+                    Total generado
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Distribución por plataforma */}
+      <div style={{
+        background: 'rgba(42, 63, 63, 0.4)',
+        borderRadius: isMobile ? '12px' : '16px',
+        padding: isMobile ? '16px' : '24px',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        marginTop: isMobile ? '20px' : '32px'
+      }}>
+        <h3 style={{ 
+          fontSize: isMobile ? '16px' : '18px', 
+          fontWeight: '600', 
+          color: '#ffffff', 
+          marginBottom: isMobile ? '16px' : '20px' 
+        }}>
+          Distribución por Plataforma
+        </h3>
+
+        <div style={{ 
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: isMobile ? '12px' : '16px'
+        }}>
+          {[
+            { name: 'Spotify', percentage: 45, revenue: dashboardData.totalRevenue * 0.45, color: '#1DB954' },
+            { name: 'Apple Music', percentage: 25, revenue: dashboardData.totalRevenue * 0.25, color: '#FA2D48' },
+            { name: 'YouTube Music', percentage: 15, revenue: dashboardData.totalRevenue * 0.15, color: '#FF0000' },
+            { name: 'Otras', percentage: 15, revenue: dashboardData.totalRevenue * 0.15, color: '#c9a574' }
+          ].map(platform => (
+            <div
+              key={platform.name}
+              style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: isMobile ? '10px' : '12px',
+                padding: isMobile ? '14px' : '16px',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ 
+                  fontSize: isMobile ? '14px' : '15px', 
+                  fontWeight: '600', 
+                  color: '#ffffff' 
                 }}>
-                  Ingresos
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  {platform.name}
+                </span>
+                <span style={{ 
+                  fontSize: isMobile ? '16px' : '18px', 
+                  fontWeight: '700', 
+                  color: platform.color 
                 }}>
-                  % BAM
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Beneficio BAM
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {artists.map((artist, index) => {
-                const bamPercentage = 30; // Mock - vendría del contrato
-                const bamProfit = (artist.totalRevenue || 0) * (bamPercentage / 100);
-                
-                return (
-                  <tr
-                    key={artist.id}
-                    style={{
-                      borderBottom: index < artists.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
-                      transition: 'background 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(201, 165, 116, 0.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <td style={{
-                      padding: '20px 24px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          background: artist.photo ? `url(${artist.photo})` : '#c9a574',
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '16px',
-                          fontWeight: '600',
-                          color: '#2a3f3f'
-                        }}>
-                          {!artist.photo && artist.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={{
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#ffffff'
-                          }}>
-                            {artist.name}
-                          </div>
-                          <div style={{
-                            fontSize: '12px',
-                            color: 'rgba(255, 255, 255, 0.5)'
-                          }}>
-                            {artist.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '20px 24px',
-                      textAlign: 'right',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#ffffff'
-                    }}>
-                      {(artist.totalStreams || 0).toLocaleString('es-ES')}
-                    </td>
-                    <td style={{
-                      padding: '20px 24px',
-                      textAlign: 'right',
-                      fontSize: '16px',
-                      fontWeight: '700',
-                      color: '#c9a574'
-                    }}>
-                      €{(artist.totalRevenue || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td style={{
-                      padding: '20px 24px',
-                      textAlign: 'right',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#ffffff'
-                    }}>
-                      {bamPercentage}%
-                    </td>
-                    <td style={{
-                      padding: '20px 24px',
-                      textAlign: 'right',
-                      fontSize: '16px',
-                      fontWeight: '700',
-                      color: '#c9a574'
-                    }}>
-                      €{bamProfit.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  {platform.percentage}%
+                </span>
+              </div>
+              <div style={{
+                width: '100%',
+                height: '8px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                marginBottom: '8px'
+              }}>
+                <div style={{
+                  width: `${platform.percentage}%`,
+                  height: '100%',
+                  background: platform.color,
+                  borderRadius: '4px',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+              <p style={{ 
+                fontSize: isMobile ? '13px' : '14px', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                margin: 0 
+              }}>
+                €{platform.revenue.toLocaleString()}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -302,8 +302,8 @@
 }
 
 @layer utilities {
-  .collapse {
-    visibility: collapse;
+  .visible {
+    visibility: visible;
   }
 
   .absolute {
@@ -346,16 +346,8 @@
     display: inline;
   }
 
-  .inline-block {
-    display: inline-block;
-  }
-
   .inline-flex {
     display: inline-flex;
-  }
-
-  .table {
-    display: table;
   }
 
   .transform {

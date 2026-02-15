@@ -1,965 +1,576 @@
 import { useState } from 'react';
-import { ArrowDownRight, Plus, Trash2, Edit, Download, Filter, Calendar } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface ExpensesSectionProps {
-  dashboardData: any;
-  artists: any[];
+interface Expense {
+  id: number;
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  paymentMethod: string;
 }
 
-export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps) {
-  const [showAddExpense, setShowAddExpense] = useState(false);
-  const [expenses, setExpenses] = useState([
-    {
-      id: 1,
-      category: 'operativo',
-      concept: 'Servidor Cloud',
-      description: 'Hosting mensual',
-      amount: 150.00,
-      date: '2026-02-01',
-      provider: 'AWS',
-      invoiceNumber: 'INV-2026-001',
-      paymentMethod: 'tarjeta'
-    },
-    {
-      id: 2,
-      category: 'marketing',
-      concept: 'Campaña Digital',
-      description: 'Ads en redes sociales',
-      amount: 500.00,
-      date: '2026-02-05',
-      provider: 'Meta Ads',
-      invoiceNumber: 'INV-2026-002',
-      paymentMethod: 'tarjeta'
-    },
-    {
-      id: 3,
-      category: 'distribucion',
-      concept: 'The Orchard',
-      description: 'Comisión distribución',
-      amount: 300.00,
-      date: '2026-02-10',
-      provider: 'The Orchard',
-      invoiceNumber: 'INV-2026-003',
-      paymentMethod: 'transferencia'
-    },
-    {
-      id: 4,
-      category: 'legal',
-      concept: 'Asesoría Legal',
-      description: 'Revisión de contratos',
-      amount: 800.00,
-      date: '2026-02-12',
-      provider: 'Bufete García',
-      invoiceNumber: 'INV-2026-004',
-      paymentMethod: 'transferencia'
-    }
+interface ExpensesSectionProps {
+  isMobile?: boolean;
+}
+
+export function ExpensesSection({ isMobile = false }: ExpensesSectionProps) {
+  const [expenses, setExpenses] = useState<Expense[]>([
+    { id: 1, description: 'Pago de royalties - Enero', amount: 25000, category: 'operativo', date: '2024-01-15', paymentMethod: 'Transferencia' },
+    { id: 2, description: 'Campaña publicitaria Spotify', amount: 5500, category: 'marketing', date: '2024-01-20', paymentMethod: 'Tarjeta' },
+    { id: 3, description: 'Distribución digital - The Orchard', amount: 3200, category: 'distribucion', date: '2024-01-25', paymentMethod: 'Transferencia' },
+    { id: 4, description: 'Honorarios legales', amount: 2100, category: 'legal', date: '2024-01-28', paymentMethod: 'Transferencia' },
   ]);
 
-  const [newExpense, setNewExpense] = useState({
-    category: 'operativo',
-    concept: '',
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+
+  const [formData, setFormData] = useState({
     description: '',
     amount: '',
+    category: 'operativo',
     date: new Date().toISOString().split('T')[0],
-    provider: '',
-    invoiceNumber: '',
-    paymentMethod: 'transferencia'
+    paymentMethod: 'Transferencia'
   });
 
-  const categoryColors: { [key: string]: string } = {
-    operativo: '#c9a574',
-    marketing: '#c9a574',
-    distribucion: '#c9a574',
-    legal: '#c9a574',
-    otros: '#c9a574'
+  const categories = {
+    operativo: { label: 'Operativo', color: '#c9a574' },
+    marketing: { label: 'Marketing', color: '#c9a574' },
+    distribucion: { label: 'Distribución', color: '#c9a574' },
+    legal: { label: 'Legal', color: '#c9a574' },
+    otros: { label: 'Otros', color: '#c9a574' }
   };
 
-  const categoryLabels: { [key: string]: string } = {
-    operativo: 'Operativo',
-    marketing: 'Marketing',
-    distribucion: 'Distribución',
-    legal: 'Legal',
-    otros: 'Otros'
-  };
-
-  // Calcular totales por categoría
-  const expensesByCategory = expenses.reduce((acc, expense) => {
-    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-    return acc;
-  }, {} as { [key: string]: number });
-
-  const categoryChartData = Object.keys(expensesByCategory).map(category => ({
-    name: categoryLabels[category] || category,
-    value: expensesByCategory[category],
-    color: categoryColors[category]
+  const categoryData = Object.keys(categories).map(cat => ({
+    category: categories[cat as keyof typeof categories].label,
+    value: expenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0)
   }));
 
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  const handleAddExpense = () => {
-    if (!newExpense.concept || !newExpense.amount) {
-      alert('Por favor completa los campos obligatorios');
-      return;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingExpense) {
+      setExpenses(expenses.map(exp => 
+        exp.id === editingExpense.id 
+          ? { ...exp, ...formData, amount: parseFloat(formData.amount) }
+          : exp
+      ));
+    } else {
+      const newExpense: Expense = {
+        id: Date.now(),
+        description: formData.description,
+        amount: parseFloat(formData.amount),
+        category: formData.category,
+        date: formData.date,
+        paymentMethod: formData.paymentMethod
+      };
+      setExpenses([...expenses, newExpense]);
     }
-
-    const expense = {
-      id: expenses.length + 1,
-      category: newExpense.category,
-      concept: newExpense.concept,
-      description: newExpense.description,
-      amount: parseFloat(newExpense.amount),
-      date: newExpense.date,
-      provider: newExpense.provider,
-      invoiceNumber: newExpense.invoiceNumber,
-      paymentMethod: newExpense.paymentMethod
-    };
-
-    setExpenses([...expenses, expense]);
-    setShowAddExpense(false);
-    setNewExpense({
-      category: 'operativo',
-      concept: '',
+    setShowAddModal(false);
+    setEditingExpense(null);
+    setFormData({
       description: '',
       amount: '',
+      category: 'operativo',
       date: new Date().toISOString().split('T')[0],
-      provider: '',
-      invoiceNumber: '',
-      paymentMethod: 'transferencia'
+      paymentMethod: 'Transferencia'
     });
   };
 
-  const handleDeleteExpense = (id: number) => {
-    if (confirm('¿Estás seguro de eliminar este gasto?')) {
-      setExpenses(expenses.filter(exp => exp.id !== id));
-    }
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense);
+    setFormData({
+      description: expense.description,
+      amount: expense.amount.toString(),
+      category: expense.category,
+      date: expense.date,
+      paymentMethod: expense.paymentMethod
+    });
+    setShowAddModal(true);
+  };
+
+  const handleDelete = (id: number) => {
+    setExpenses(expenses.filter(e => e.id !== id));
   };
 
   return (
     <div>
-      {/* Header Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '16px',
-        marginBottom: '32px'
+      {/* Header con botón agregar */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: isMobile ? 'flex-start' : 'center',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '16px' : '0',
+        marginBottom: isMobile ? '20px' : '32px' 
       }}>
-        {/* Total Gastos */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(239, 68, 68, 0.3)'
-        }}>
-          <div style={{
+        <div>
+          <h2 style={{ 
+            fontSize: isMobile ? '20px' : '24px', 
+            fontWeight: '700', 
+            color: '#ffffff', 
+            margin: 0 
+          }}>
+            Gestión de Gastos
+          </h2>
+          <p style={{ 
+            fontSize: isMobile ? '13px' : '14px', 
+            color: 'rgba(255, 255, 255, 0.7)', 
+            margin: '4px 0 0 0' 
+          }}>
+            Total gastado: <span style={{ color: '#c9a574', fontWeight: '600' }}>€{totalExpenses.toLocaleString()}</span>
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          style={{
+            padding: isMobile ? '10px 20px' : '12px 24px',
+            background: 'linear-gradient(135deg, #c9a574 0%, #b8935d 100%)',
+            color: '#2a3f3f',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            fontSize: isMobile ? '14px' : '15px',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'rgba(239, 68, 68, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <ArrowDownRight size={24} color="#ef4444" />
-            </div>
-            <span style={{
-              fontSize: '12px',
-              color: 'rgba(255, 255, 255, 0.7)',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              Total Gastos
-            </span>
-          </div>
-          <div style={{
-            fontSize: '32px',
-            fontWeight: '700',
-            color: '#ef4444',
-            marginBottom: '8px'
-          }}>
-            €{totalExpenses.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
-            {expenses.length} gastos registrados
-          </div>
-        </div>
-
-        {/* Operativo */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.4)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(201, 165, 116, 0.3)'
-        }}>
-          <div style={{
-            fontSize: '12px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            marginBottom: '8px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            Operativo
-          </div>
-          <div style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#c9a574',
-            marginBottom: '8px'
-          }}>
-            €{(expensesByCategory.operativo || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
-            {((expensesByCategory.operativo || 0) / totalExpenses * 100).toFixed(1)}% del total
-          </div>
-        </div>
-
-        {/* Marketing */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.4)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(201, 165, 116, 0.3)'
-        }}>
-          <div style={{
-            fontSize: '12px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            marginBottom: '8px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            Marketing
-          </div>
-          <div style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#c9a574',
-            marginBottom: '8px'
-          }}>
-            €{(expensesByCategory.marketing || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
-            {((expensesByCategory.marketing || 0) / totalExpenses * 100).toFixed(1)}% del total
-          </div>
-        </div>
-
-        {/* Distribución */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.4)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid rgba(201, 165, 116, 0.3)'
-        }}>
-          <div style={{
-            fontSize: '12px',
-            color: 'rgba(255, 255, 255, 0.7)',
-            marginBottom: '8px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            Distribución
-          </div>
-          <div style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#c9a574',
-            marginBottom: '8px'
-          }}>
-            €{(expensesByCategory.distribucion || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-          </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.5)' }}>
-            {((expensesByCategory.distribucion || 0) / totalExpenses * 100).toFixed(1)}% del total
-          </div>
-        </div>
+            gap: '8px',
+            width: isMobile ? '100%' : 'auto',
+            justifyContent: 'center'
+          }}
+        >
+          <Plus size={18} />
+          Agregar Gasto
+        </button>
       </div>
 
-      {/* Gráfico y Botón Agregar */}
+      {/* Gráfico de gastos por categoría */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gap: '16px',
-        marginBottom: '32px'
+        background: 'rgba(42, 63, 63, 0.4)',
+        borderRadius: isMobile ? '12px' : '16px',
+        padding: isMobile ? '16px' : '24px',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        marginBottom: isMobile ? '20px' : '32px'
       }}>
-        {/* Gráfico de Gastos por Categoría */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.3)',
-          borderRadius: '16px',
-          padding: '28px',
-          border: '1px solid rgba(201, 165, 116, 0.2)'
+        <h3 style={{ 
+          fontSize: isMobile ? '16px' : '18px', 
+          fontWeight: '600', 
+          color: '#ffffff', 
+          marginBottom: isMobile ? '16px' : '20px' 
         }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#ffffff',
-            marginBottom: '24px'
-          }}>
-            Gastos por Categoría
-          </h3>
-          <div style={{ height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="rgba(255, 255, 255, 0.6)"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis 
-                  stroke="rgba(255, 255, 255, 0.6)"
-                  style={{ fontSize: '12px' }}
-                  tickFormatter={(value) => `€${value}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: 'rgba(42, 63, 63, 0.95)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
-                    borderRadius: '8px',
-                    color: '#ffffff'
-                  }}
-                  formatter={(value: any) => [`€${value.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`, '']}
-                  labelStyle={{ color: '#c9a574' }}
-                />
-                <Bar dataKey="value" fill="#c9a574" radius={[8, 8, 0, 0]}>
-                  {categoryChartData.map((entry, index) => (
-                    <rect key={`bar-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Botón Agregar Gasto */}
-        <div style={{
-          background: 'rgba(42, 63, 63, 0.3)',
-          borderRadius: '16px',
-          padding: '28px',
-          border: '1px solid rgba(201, 165, 116, 0.2)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-          <Plus size={48} color="#c9a574" style={{ opacity: 0.5 }} />
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#ffffff',
-            textAlign: 'center'
-          }}>
-            Registrar Nuevo Gasto
-          </h3>
-          <p style={{
-            fontSize: '14px',
-            color: 'rgba(255, 255, 255, 0.6)',
-            textAlign: 'center',
-            marginBottom: '8px'
-          }}>
-            Añade un nuevo gasto operativo, de marketing, distribución o legal
-          </p>
-          <button
-            onClick={() => setShowAddExpense(true)}
-            style={{
-              padding: '12px 24px',
-              background: 'linear-gradient(135deg, #c9a574 0%, #b8935d 100%)',
-              border: 'none',
-              borderRadius: '12px',
-              color: '#2a3f3f',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 12px rgba(201, 165, 116, 0.3)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(201, 165, 116, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.3)';
-            }}
-          >
-            <Plus size={18} />
-            Agregar Gasto
-          </button>
-        </div>
+          Gastos por Categoría
+        </h3>
+        <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
+          <BarChart data={categoryData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+            <XAxis 
+              dataKey="category" 
+              stroke="rgba(255, 255, 255, 0.5)"
+              style={{ fontSize: isMobile ? '11px' : '12px' }}
+              angle={isMobile ? -45 : 0}
+              textAnchor={isMobile ? 'end' : 'middle'}
+              height={isMobile ? 80 : 30}
+            />
+            <YAxis 
+              stroke="rgba(255, 255, 255, 0.5)"
+              style={{ fontSize: isMobile ? '11px' : '12px' }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#2a3f3f',
+                border: '1px solid rgba(201, 165, 116, 0.3)',
+                borderRadius: '8px',
+                fontSize: isMobile ? '12px' : '14px'
+              }}
+              labelStyle={{ color: '#c9a574' }}
+            />
+            <Bar dataKey="value" fill="#c9a574" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
-      {/* Modal Agregar Gasto */}
-      {showAddExpense && (
+      {/* Lista de gastos */}
+      <div style={{
+        background: 'rgba(42, 63, 63, 0.4)',
+        borderRadius: isMobile ? '12px' : '16px',
+        padding: isMobile ? '16px' : '24px',
+        border: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <h3 style={{ 
+          fontSize: isMobile ? '16px' : '18px', 
+          fontWeight: '600', 
+          color: '#ffffff', 
+          marginBottom: isMobile ? '16px' : '20px' 
+        }}>
+          Historial de Gastos
+        </h3>
+        
+        {expenses.length === 0 ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: isMobile ? '32px 16px' : '48px',
+            color: 'rgba(255, 255, 255, 0.5)' 
+          }}>
+            <Plus size={isMobile ? 48 : 56} color="#c9a574" style={{ opacity: 0.5, marginBottom: '16px' }} />
+            <p style={{ fontSize: isMobile ? '14px' : '16px' }}>
+              No hay gastos registrados
+            </p>
+          </div>
+        ) : (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: isMobile ? '12px' : '16px' 
+          }}>
+            {expenses.map((expense) => (
+              <div
+                key={expense.id}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: isMobile ? '10px' : '12px',
+                  padding: isMobile ? '14px' : '20px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  gap: isMobile ? '12px' : '16px',
+                  flexDirection: isMobile ? 'column' : 'row',
+                  alignItems: isMobile ? 'stretch' : 'center'
+                }}>
+                  {/* Info principal */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h4 style={{ 
+                      fontSize: isMobile ? '15px' : '16px', 
+                      fontWeight: '600', 
+                      color: '#ffffff', 
+                      margin: '0 0 8px 0',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: isMobile ? 'normal' : 'nowrap'
+                    }}>
+                      {expense.description}
+                    </h4>
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: isMobile ? '8px' : '16px', 
+                      flexWrap: 'wrap',
+                      fontSize: isMobile ? '12px' : '13px',
+                      color: 'rgba(255, 255, 255, 0.6)'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Tag size={14} />
+                        {categories[expense.category as keyof typeof categories].label}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Calendar size={14} />
+                        {new Date(expense.date).toLocaleDateString('es-ES')}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <FileText size={14} />
+                        {expense.paymentMethod}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Monto y acciones */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: isMobile ? '12px' : '20px',
+                    justifyContent: isMobile ? 'space-between' : 'flex-end'
+                  }}>
+                    <span style={{ 
+                      fontSize: isMobile ? '18px' : '20px', 
+                      fontWeight: '700', 
+                      color: '#c9a574',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      €{expense.amount.toLocaleString()}
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleEdit(expense)}
+                        style={{
+                          padding: isMobile ? '8px' : '10px',
+                          background: 'rgba(201, 165, 116, 0.1)',
+                          color: '#c9a574',
+                          border: '1px solid rgba(201, 165, 116, 0.3)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <Edit2 size={isMobile ? 16 : 18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(expense.id)}
+                        style={{
+                          padding: isMobile ? '8px' : '10px',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#ef4444',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <Trash2 size={isMobile ? 16 : 18} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal Agregar/Editar */}
+      {showAddModal && (
         <div style={{
           position: 'fixed',
-          inset: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           background: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 10000,
           display: 'flex',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-end' : 'center',
           justifyContent: 'center',
-          padding: '20px'
+          zIndex: 1000,
+          padding: isMobile ? '0' : '20px'
         }}>
           <div style={{
-            background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.95) 0%, rgba(30, 47, 47, 0.95) 100%)',
-            borderRadius: '16px',
-            padding: '32px',
-            maxWidth: '600px',
-            width: '100%',
-            border: '1px solid rgba(201, 165, 116, 0.3)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-            maxHeight: '90vh',
+            background: '#2a3f3f',
+            borderRadius: isMobile ? '16px 16px 0 0' : '16px',
+            padding: isMobile ? '24px 20px' : '32px',
+            width: isMobile ? '100%' : '100%',
+            maxWidth: '500px',
+            maxHeight: isMobile ? '90vh' : '90vh',
             overflowY: 'auto'
           }}>
-            <h3 style={{
-              fontSize: '24px',
-              fontWeight: '700',
-              color: '#ffffff',
-              marginBottom: '24px'
+            <h3 style={{ 
+              fontSize: isMobile ? '20px' : '24px', 
+              fontWeight: '700', 
+              color: '#ffffff', 
+              marginBottom: isMobile ? '20px' : '24px' 
             }}>
-              Registrar Nuevo Gasto
+              {editingExpense ? 'Editar Gasto' : 'Agregar Nuevo Gasto'}
             </h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Categoría */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: '#c9a574',
-                  marginBottom: '8px'
-                }}>
-                  Categoría *
-                </label>
-                <select
-                  value={newExpense.category}
-                  onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
-                    borderRadius: '8px',
-                    color: '#ffffff',
-                    fontSize: '14px'
-                  }}
-                >
-                  <option value="operativo">Operativo</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="distribucion">Distribución</option>
-                  <option value="legal">Legal</option>
-                  <option value="otros">Otros</option>
-                </select>
-              </div>
-
-              {/* Concepto */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: '#c9a574',
-                  marginBottom: '8px'
-                }}>
-                  Concepto *
-                </label>
-                <input
-                  type="text"
-                  value={newExpense.concept}
-                  onChange={(e) => setNewExpense({ ...newExpense, concept: e.target.value })}
-                  placeholder="Ej: Servidor Cloud"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
-                    borderRadius: '8px',
-                    color: '#ffffff',
-                    fontSize: '14px'
-                  }}
-                />
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: '#c9a574',
-                  marginBottom: '8px'
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: isMobile ? '13px' : '14px', 
+                  color: '#c9a574', 
+                  marginBottom: '8px',
+                  fontWeight: '600'
                 }}>
                   Descripción
                 </label>
-                <textarea
-                  value={newExpense.description}
-                  onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
-                  placeholder="Detalles adicionales..."
-                  rows={3}
+                <input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  required
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
+                    padding: isMobile ? '12px' : '14px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '8px',
                     color: '#ffffff',
-                    fontSize: '14px',
-                    resize: 'vertical'
+                    fontSize: isMobile ? '15px' : '16px',
+                    boxSizing: 'border-box'
+                  }}
+                  placeholder="Ej: Pago de royalties"
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: isMobile ? '13px' : '14px', 
+                  color: '#c9a574', 
+                  marginBottom: '8px',
+                  fontWeight: '600'
+                }}>
+                  Monto (€)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '12px' : '14px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: '#ffffff',
+                    fontSize: isMobile ? '15px' : '16px',
+                    boxSizing: 'border-box'
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: isMobile ? '13px' : '14px', 
+                  color: '#c9a574', 
+                  marginBottom: '8px',
+                  fontWeight: '600'
+                }}>
+                  Categoría
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '12px' : '14px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: '#ffffff',
+                    fontSize: isMobile ? '15px' : '16px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  {Object.entries(categories).map(([key, value]) => (
+                    <option key={key} value={key} style={{ background: '#2a3f3f' }}>
+                      {value.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: isMobile ? '13px' : '14px', 
+                  color: '#c9a574', 
+                  marginBottom: '8px',
+                  fontWeight: '600'
+                }}>
+                  Fecha
+                </label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: isMobile ? '12px' : '14px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: '#ffffff',
+                    fontSize: isMobile ? '15px' : '16px',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
 
-              {/* Monto y Fecha */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#c9a574',
-                    marginBottom: '8px'
-                  }}>
-                    Monto (€) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newExpense.amount}
-                    onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                    placeholder="0.00"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(201, 165, 116, 0.3)',
-                      borderRadius: '8px',
-                      color: '#ffffff',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#c9a574',
-                    marginBottom: '8px'
-                  }}>
-                    Fecha
-                  </label>
-                  <input
-                    type="date"
-                    value={newExpense.date}
-                    onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(201, 165, 116, 0.3)',
-                      borderRadius: '8px',
-                      color: '#ffffff',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Proveedor y Número de Factura */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#c9a574',
-                    marginBottom: '8px'
-                  }}>
-                    Proveedor
-                  </label>
-                  <input
-                    type="text"
-                    value={newExpense.provider}
-                    onChange={(e) => setNewExpense({ ...newExpense, provider: e.target.value })}
-                    placeholder="Nombre del proveedor"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(201, 165, 116, 0.3)',
-                      borderRadius: '8px',
-                      color: '#ffffff',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#c9a574',
-                    marginBottom: '8px'
-                  }}>
-                    Nº Factura
-                  </label>
-                  <input
-                    type="text"
-                    value={newExpense.invoiceNumber}
-                    onChange={(e) => setNewExpense({ ...newExpense, invoiceNumber: e.target.value })}
-                    placeholder="INV-2026-XXX"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(201, 165, 116, 0.3)',
-                      borderRadius: '8px',
-                      color: '#ffffff',
-                      fontSize: '14px'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Método de Pago */}
-              <div>
-                <label style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: '#c9a574',
-                  marginBottom: '8px'
+              <div style={{ marginBottom: isMobile ? '24px' : '32px' }}>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: isMobile ? '13px' : '14px', 
+                  color: '#c9a574', 
+                  marginBottom: '8px',
+                  fontWeight: '600'
                 }}>
                   Método de Pago
                 </label>
                 <select
-                  value={newExpense.paymentMethod}
-                  onChange={(e) => setNewExpense({ ...newExpense, paymentMethod: e.target.value })}
+                  value={formData.paymentMethod}
+                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                   style={{
                     width: '100%',
-                    padding: '12px',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
+                    padding: isMobile ? '12px' : '14px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '8px',
                     color: '#ffffff',
-                    fontSize: '14px'
+                    fontSize: isMobile ? '15px' : '16px',
+                    boxSizing: 'border-box'
                   }}
                 >
-                  <option value="transferencia">Transferencia</option>
-                  <option value="tarjeta">Tarjeta</option>
-                  <option value="efectivo">Efectivo</option>
-                  <option value="otro">Otro</option>
+                  <option value="Transferencia" style={{ background: '#2a3f3f' }}>Transferencia Bancaria</option>
+                  <option value="Tarjeta" style={{ background: '#2a3f3f' }}>Tarjeta</option>
+                  <option value="Efectivo" style={{ background: '#2a3f3f' }}>Efectivo</option>
+                  <option value="Cheque" style={{ background: '#2a3f3f' }}>Cheque</option>
                 </select>
               </div>
-            </div>
 
-            {/* Botones */}
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              marginTop: '24px'
-            }}>
-              <button
-                onClick={() => setShowAddExpense(false)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAddExpense}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'linear-gradient(135deg, #c9a574 0%, #b8935d 100%)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#2a3f3f',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(201, 165, 116, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(201, 165, 116, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.3)';
-                }}
-              >
-                Guardar Gasto
-              </button>
-            </div>
+              <div style={{ 
+                display: 'flex', 
+                gap: '12px',
+                flexDirection: isMobile ? 'column-reverse' : 'row'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingExpense(null);
+                    setFormData({
+                      description: '',
+                      amount: '',
+                      category: 'operativo',
+                      date: new Date().toISOString().split('T')[0],
+                      paymentMethod: 'Transferencia'
+                    });
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: isMobile ? '12px' : '14px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#ffffff',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: isMobile ? '15px' : '16px'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: isMobile ? '12px' : '14px',
+                    background: 'linear-gradient(135deg, #c9a574 0%, #b8935d 100%)',
+                    color: '#2a3f3f',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: isMobile ? '15px' : '16px'
+                  }}
+                >
+                  {editingExpense ? 'Guardar Cambios' : 'Agregar Gasto'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-
-      {/* Lista de Gastos */}
-      <div style={{
-        background: 'rgba(42, 63, 63, 0.3)',
-        borderRadius: '16px',
-        border: '1px solid rgba(201, 165, 116, 0.2)',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#ffffff',
-            margin: 0
-          }}>
-            Historial de Gastos
-          </h3>
-          <button
-            onClick={() => alert('Exportando a Excel...')}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(201, 165, 116, 0.1)',
-              border: '1px solid rgba(201, 165, 116, 0.3)',
-              borderRadius: '8px',
-              color: '#c9a574',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(201, 165, 116, 0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(201, 165, 116, 0.1)';
-            }}
-          >
-            <Download size={14} />
-            Exportar
-          </button>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{
-                background: 'rgba(0, 0, 0, 0.2)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Fecha
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Concepto
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Categoría
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Proveedor
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'right',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Monto
-                </th>
-                <th style={{
-                  padding: '16px 24px',
-                  textAlign: 'center',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((expense, index) => (
-                <tr
-                  key={expense.id}
-                  style={{
-                    borderBottom: index < expenses.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
-                    transition: 'background 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(201, 165, 116, 0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  <td style={{
-                    padding: '20px 24px',
-                    fontSize: '14px',
-                    color: 'rgba(255, 255, 255, 0.8)'
-                  }}>
-                    {new Date(expense.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </td>
-                  <td style={{
-                    padding: '20px 24px'
-                  }}>
-                    <div style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#ffffff',
-                      marginBottom: '4px'
-                    }}>
-                      {expense.concept}
-                    </div>
-                    {expense.description && (
-                      <div style={{
-                        fontSize: '12px',
-                        color: 'rgba(255, 255, 255, 0.5)'
-                      }}>
-                        {expense.description}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{
-                    padding: '20px 24px'
-                  }}>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      background: `${categoryColors[expense.category]}20`,
-                      color: categoryColors[expense.category],
-                      border: `1px solid ${categoryColors[expense.category]}40`
-                    }}>
-                      {categoryLabels[expense.category]}
-                    </span>
-                  </td>
-                  <td style={{
-                    padding: '20px 24px',
-                    fontSize: '14px',
-                    color: 'rgba(255, 255, 255, 0.8)'
-                  }}>
-                    {expense.provider || '-'}
-                  </td>
-                  <td style={{
-                    padding: '20px 24px',
-                    textAlign: 'right',
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    color: '#c9a574'
-                  }}>
-                    €{expense.amount.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td style={{
-                    padding: '20px 24px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                      <button
-                        onClick={() => handleDeleteExpense(expense.id)}
-                        style={{
-                          padding: '6px',
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          border: '1px solid rgba(239, 68, 68, 0.3)',
-                          borderRadius: '6px',
-                          color: '#ef4444',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }
