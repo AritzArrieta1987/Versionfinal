@@ -1,10 +1,12 @@
 // Configuración centralizada del API
 // Usa la variable de entorno VITE_API_URL si está disponible
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://app.bigartist.es/api';
+const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) 
+  ? import.meta.env.VITE_API_URL 
+  : 'https://app.bigartist.es/api';
 
 console.log('🔧 API Configuration:', {
   API_BASE_URL,
-  environment: import.meta.env.MODE
+  environment: typeof import.meta !== 'undefined' ? import.meta.env?.MODE : 'production'
 });
 
 export const API_ENDPOINTS = {
