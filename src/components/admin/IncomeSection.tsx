@@ -30,22 +30,22 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
       }}>
         {/* Ingresos por Streaming */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)',
+          background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
           borderRadius: isMobile ? '12px' : '16px',
           padding: isMobile ? '18px' : '24px',
-          border: '1px solid rgba(34, 197, 94, 0.2)'
+          border: '1px solid rgba(201, 165, 116, 0.3)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
             <div style={{
               width: isMobile ? '40px' : '48px',
               height: isMobile ? '40px' : '48px',
               borderRadius: '12px',
-              background: 'rgba(34, 197, 94, 0.2)',
+              background: 'rgba(201, 165, 116, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Music size={isMobile ? 20 : 24} color="#22c55e" />
+              <Music size={isMobile ? 20 : 24} color="#c9a574" />
             </div>
             <div>
               <p style={{ 
@@ -58,7 +58,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
               <h3 style={{ 
                 fontSize: isMobile ? '20px' : '24px', 
                 fontWeight: '700', 
-                color: '#22c55e', 
+                color: '#c9a574', 
                 margin: '4px 0 0 0' 
               }}>
                 €{(dashboardData.totalRevenue * 0.85).toLocaleString()}
@@ -76,22 +76,22 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
 
         {/* Ingresos por Ventas */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)',
+          background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
           borderRadius: isMobile ? '12px' : '16px',
           padding: isMobile ? '18px' : '24px',
-          border: '1px solid rgba(59, 130, 246, 0.2)'
+          border: '1px solid rgba(201, 165, 116, 0.3)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
             <div style={{
               width: isMobile ? '40px' : '48px',
               height: isMobile ? '40px' : '48px',
               borderRadius: '12px',
-              background: 'rgba(59, 130, 246, 0.2)',
+              background: 'rgba(201, 165, 116, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <DollarSign size={isMobile ? 20 : 24} color="#3b82f6" />
+              <DollarSign size={isMobile ? 20 : 24} color="#c9a574" />
             </div>
             <div>
               <p style={{ 
@@ -104,7 +104,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
               <h3 style={{ 
                 fontSize: isMobile ? '20px' : '24px', 
                 fontWeight: '700', 
-                color: '#3b82f6', 
+                color: '#c9a574', 
                 margin: '4px 0 0 0' 
               }}>
                 €{(dashboardData.totalRevenue * 0.15).toLocaleString()}
