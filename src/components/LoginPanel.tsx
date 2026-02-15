@@ -34,35 +34,37 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
     setLoading(true);
 
     try {
-      // Sistema de credenciales locales (funciona siempre)
-      const validCredentials = [
-        { email: 'admin@bigartist.es', password: 'admin123', type: 'admin', name: 'Admin' },
-        { email: 'artist@bigartist.es', password: 'admin123', type: 'artist', name: 'Artista Demo' }
-      ];
-      
-      const validUser = validCredentials.find(
-        cred => cred.email.toLowerCase() === email.toLowerCase() && cred.password === password
-      );
-      
-      if (validUser) {
-        // Login válido en modo local
-        console.log('✅ Login válido:', validUser.type);
-        localStorage.setItem('authToken', 'local-mode-' + validUser.type);
-        localStorage.setItem('user', JSON.stringify({ 
-          email: validUser.email, 
-          name: validUser.name,
-          type: validUser.type
+      // Llamada al backend para validar credenciales
+      const response = await fetch('https://app.bigartist.es/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Login exitoso
+        console.log('✅ Login válido desde MySQL:', data.user.type);
+        
+        // Guardar token y datos del usuario
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('user', JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
+          type: data.user.type // 'admin' o 'artist'
         }));
         
-        // Simular delay de red para UX realista
-        await new Promise(resolve => setTimeout(resolve, 500));
         onLoginSuccess();
       } else {
         // Credenciales incorrectas
-        throw new Error('Email o contraseña incorrectos.');
+        throw new Error(data.message || 'Email o contraseña incorrectos');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Email o contraseña incorrectos';
+      const errorMessage = err instanceof Error ? err.message : 'Error al conectar con el servidor';
       console.error('❌ Error en login:', errorMessage);
       setError(errorMessage);
     } finally {
