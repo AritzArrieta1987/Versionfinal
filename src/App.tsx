@@ -15,7 +15,8 @@ import './utils/debug'; // Importar debug tools
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userType, setUserType] = useState<'admin' | 'artist' | null>(null);
+  const [userType, setUserType] = useState<'admin' | 'artista' | null>(null);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -25,7 +26,9 @@ export default function App() {
       try {
         const user = JSON.parse(userStr);
         setUserType(user.type);
+        setUserData(user);
         setIsLoggedIn(true);
+        console.log('🔐 Usuario restaurado:', user.type, user.email);
       } catch (e) {
         // Si hay error parseando, limpiar localStorage
         localStorage.removeItem('authToken');
@@ -39,7 +42,9 @@ export default function App() {
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
+        console.log('👤 Usuario logueado:', user.type, user.email);
         setUserType(user.type);
+        setUserData(user);
         setIsLoggedIn(true);
       } catch (e) {
         console.error('Error parsing user data');
@@ -52,6 +57,7 @@ export default function App() {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUserType(null);
+    setUserData(null);
   };
 
   // Router para admin con AdminLayout
@@ -97,11 +103,30 @@ export default function App() {
   }
 
   // Si es artista, mostrar el portal de artista
-  if (userType === 'artist') {
-    return <ArtistPortal onLogout={handleLogout} />;
+  if (userType === 'artista') {
+    console.log('✅ Redirigiendo a Portal de Artista');
+    return (
+      <>
+        <Toaster />
+        <ArtistPortal 
+          onLogout={handleLogout}
+          artistData={{
+            id: userData?.id || 0,
+            name: userData?.name || 'Artista',
+            email: userData?.email || '',
+            totalRevenue: 0,
+            totalStreams: 0,
+            tracks: [],
+            monthlyData: [],
+            platformBreakdown: {}
+          }}
+        />
+      </>
+    );
   }
 
   // Si es admin, mostrar el panel de administración
+  console.log('✅ Redirigiendo a Panel Admin');
   return (
     <>
       <Toaster />
