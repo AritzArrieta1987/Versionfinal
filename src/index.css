@@ -317,6 +317,10 @@
     position: static;
   }
 
+  .sticky {
+    position: sticky;
+  }
+
   .block {
     display: block;
   }

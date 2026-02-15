@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import exampleImage from 'figma:asset/0a2a9faa1b59d5fa1e388a2eec5b08498dd7a493.png';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
+import { login } from '../utils/api';
 
 // Iconos SVG inline
 const EyeIcon = () => (
@@ -27,49 +28,83 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setDebugInfo('');
     setLoading(true);
 
     try {
+      console.log('🔐 Iniciando login...');
+      console.log('📧 Email:', email);
+      console.log('🌐 Hostname:', window.location.hostname);
+      console.log('🔗 API URL:', 'https://app.bigartist.es/api/auth/login');
+      
+      setDebugInfo('🔄 Conectando al servidor...');
+      
       // Llamada al backend para validar credenciales
-      const response = await fetch('https://app.bigartist.es/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await login(email, password);
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (response.success) {
         // Login exitoso
-        console.log('✅ Login válido desde MySQL:', data.user.type);
+        console.log('✅ Login válido desde MySQL:', response.user.type);
+        setDebugInfo('✅ Login exitoso!');
         
         // Guardar token y datos del usuario
-        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('authToken', response.token);
         localStorage.setItem('user', JSON.stringify({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.name,
-          type: data.user.type // 'admin' o 'artist'
+          id: response.user.id,
+          email: response.user.email,
+          name: response.user.name,
+          type: response.user.type // 'admin' o 'artist'
         }));
         
         onLoginSuccess();
       } else {
         // Credenciales incorrectas
-        throw new Error(data.message || 'Email o contraseña incorrectos');
+        throw new Error(response.message || 'Email o contraseña incorrectos');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al conectar con el servidor';
       console.error('❌ Error en login:', errorMessage);
-      setError(errorMessage);
+      
+      // Mostrar información más detallada
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('no se puede conectar')) {
+        setError('❌ No se puede conectar al servidor backend');
+        setDebugInfo(
+          '🔧 El backend no está accesible. Posibles causas:\n' +
+          '• El backend no está corriendo en el servidor\n' +
+          '• Problema de CORS o red\n\n' +
+          '💡 Solución: Ejecuta en tu terminal:\n' +
+          'cd backend && ./deploy-to-server.sh'
+        );
+      } else {
+        setError(errorMessage);
+        setDebugInfo('');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Modo DEMO para testing sin backend
+  const handleDemoMode = () => {
+    console.log('🎭 Modo DEMO activado');
+    
+    // Simular usuario admin
+    const demoUser = {
+      id: 1,
+      email: 'admin@bigartist.es',
+      name: 'Admin',
+      type: 'admin'
+    };
+    
+    localStorage.setItem('authToken', 'demo-token-' + Date.now());
+    localStorage.setItem('user', JSON.stringify(demoUser));
+    
+    onLoginSuccess();
   };
 
   return (
@@ -343,7 +378,7 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
                 textTransform: 'uppercase',
                 transition: 'all 0.3s ease',
                 boxShadow: '0 4px 12px rgba(201, 165, 116, 0.3)',
-                marginBottom: '20px',
+                marginBottom: '16px',
                 opacity: loading ? 0.6 : 1
               }}
               onMouseEnter={(e) => {
@@ -361,6 +396,56 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
             >
               {loading ? 'Iniciando...' : 'Iniciar Sesión'}
             </button>
+
+            {/* Debug Info */}
+            {debugInfo && (
+              <div style={{
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#93c5fd',
+                padding: '14px 16px',
+                borderRadius: '10px',
+                fontSize: '12px',
+                marginBottom: '16px',
+                whiteSpace: 'pre-line',
+                fontFamily: 'monospace',
+                maxHeight: '200px',
+                overflow: 'auto'
+              }}>
+                {debugInfo}
+              </div>
+            )}
+
+            {/* Botón de Modo Demo */}
+            {error && (
+              <button
+                type="button"
+                onClick={handleDemoMode}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#93c5fd',
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  border: '2px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  marginBottom: '20px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                🎭 Modo Demo (Ver Dashboard sin Backend)
+              </button>
+            )}
           </form>
 
           {/* Footer */}

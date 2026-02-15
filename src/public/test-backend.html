@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Backend - BigArtist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #2a3f3f 0%, #1a2525 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #c9a574;
+            font-size: 32px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #999;
+            margin-bottom: 40px;
+        }
+        
+        .test-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(201,165,116,0.3);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .test-card h2 {
+            color: #c9a574;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .test-card p {
+            color: #ccc;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        button {
+            background: #c9a574;
+            color: #2a3f3f;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #b8935d;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .result.success {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid #4ade80;
+            color: #4ade80;
+        }
+        
+        .result.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        
+        .result.info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-badge.online {
+            background: #4ade80;
+            color: #000;
+        }
+        
+        .status-badge.offline {
+            background: #ef4444;
+            color: #fff;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #c9a574;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-card {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #c9a574;
+        }
+        
+        .info-card strong {
+            color: #c9a574;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .info-card span {
+            color: #fff;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Backend BigArtist</h1>
+        <p class="subtitle">Herramienta de diagnóstico del servidor backend</p>
+        
+        <!-- Test 1: Conectividad Básica -->
+        <div class="test-card">
+            <h2>1️⃣ Test de Conectividad</h2>
+            <p>Verifica si el servidor backend está accesible desde esta ubicación.</p>
+            <button onclick="testConnectivity()">🔌 Probar Conexión</button>
+            <div id="result1" class="result"></div>
+        </div>
+        
+        <!-- Test 2: Login -->
+        <div class="test-card">
+            <h2>2️⃣ Test de Login</h2>
+            <p>Intenta autenticarse con las credenciales de administrador.</p>
+            <button onclick="testLogin()">🔐 Probar Login</button>
+            <div id="result2" class="result"></div>
+        </div>
+        
+        <!-- Test 3: CORS -->
+        <div class="test-card">
+            <h2>3️⃣ Test de CORS</h2>
+            <p>Verifica que el servidor permita peticiones desde este origen.</p>
+            <button onclick="testCORS()">🌐 Probar CORS</button>
+            <div id="result3" class="result"></div>
+        </div>
+        
+        <!-- Test 4: Info del Sistema -->
+        <div class="test-card">
+            <h2>4️⃣ Información del Sistema</h2>
+            <p>Detalles sobre el entorno actual y configuración.</p>
+            <button onclick="showSystemInfo()">ℹ️ Ver Información</button>
+            <div id="result4" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://app.bigartist.es';
+
+        function showResult(id, content, type = 'info') {
+            const el = document.getElementById(id);
+            el.style.display = 'block';
+            el.className = `result ${type}`;
+            el.innerHTML = content;
+        }
+
+        function showLoading(id) {
+            showResult(id, '<span class="spinner"></span> Probando...', 'info');
+        }
+
+        async function testConnectivity() {
+            showLoading('result1');
+            
+            try {
+                const start = Date.now();
+                const response = await fetch(`${API_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const time = Date.now() - start;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('result1', `
+                        <strong>✅ CONEXIÓN EXITOSA</strong><br><br>
+                        <strong>URL:</strong> ${API_URL}<br>
+                        <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                        <strong>Tiempo:</strong> ${time}ms<br><br>
+                        <strong>Respuesta:</strong><br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult('result1', `
+                        <strong>⚠️ SERVIDOR RESPONDE PERO CON ERROR</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Error:</strong> ${response.statusText}
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult('result1', `
+                    <strong>❌ NO SE PUEDE CONECTAR</strong><br><br>
+                    <strong>Error:</strong> ${error.message}<br><br>
+                    <strong>Posibles causas:</strong><br>
+                    • El backend no está corriendo en el servidor<br>
+                    • Problema de red o firewall<br>
+                    • CORS bloqueando la petición<br>
+                    • El servidor está caído<br><br>
+                    <strong>Solución:</strong><br>
+                    1. Conecta al servidor: <code>ssh root@94.143.141.241</code><br>
+                    2. Verifica PM2: <code>pm2 list</code><br>
+                    3. Si no está corriendo: <code>pm2 start server.js --name bigartist-backend</code>
+                `, 'error');
+            }
+        }
+
+        async function testLogin() {
+            showLoading('result2');
+            
+            const credentials = {
+                email: 'admin@bigartist.es',
+                password: 'admin123'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(credentials)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult('result2', `
+                        <strong>✅ LOGIN EXITOSO</strong><br><br>
+                        <strong>Usuario:</strong> ${data.user.name}<br>
+                        <strong>Email:</strong> ${data.user.email}<br>
+                        <strong>Tipo:</strong> ${data.user.type}<br>
+                        <strong>Token:</strong> ${data.token.substring(0, 40)}...<br><br>
+                        <strong>Respuesta completa:</strong><br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    showResult('result2', `
+                        <strong>❌ LOGIN FALLIDO</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Mensaje:</strong> ${data.message || 'Sin mensaje'}<br><br>
+                        <strong>Respuesta:</strong><br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre><br>
+                        <strong>Posibles causas:</strong><br>
+                        • Usuario no existe en la base de datos<br>
+                        • Contraseña incorrecta<br>
+                        • Base de datos no configurada<br><br>
+                        <strong>Solución:</strong><br>
+                        Ejecutar: <code>mysql -u root -p bigartist_royalties < setup.sql</code>
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult('result2', `
+                    <strong>❌ ERROR EN LA PETICIÓN</strong><br><br>
+                    <strong>Error:</strong> ${error.message}<br><br>
+                    El servidor no está accesible. Ver test de conectividad.
+                `, 'error');
+            }
+        }
+
+        async function testCORS() {
+            showLoading('result3');
+            
+            const origin = window.location.origin;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                };
+
+                if (response.ok) {
+                    showResult('result3', `
+                        <strong>✅ CORS CONFIGURADO CORRECTAMENTE</strong><br><br>
+                        <strong>Origen actual:</strong> ${origin}<br><br>
+                        <strong>Headers CORS del servidor:</strong><br>
+                        <pre>${JSON.stringify(corsHeaders, null, 2)}</pre><br>
+                        La petición fue exitosa, lo que significa que CORS permite este origen.
+                    `, 'success');
+                } else {
+                    showResult('result3', `
+                        <strong>⚠️ POSIBLE PROBLEMA DE CORS</strong><br><br>
+                        La petición llegó pero respondió con error ${response.status}
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult('result3', `
+                    <strong>❌ ERROR DE CORS O CONECTIVIDAD</strong><br><br>
+                    <strong>Error:</strong> ${error.message}<br><br>
+                    <strong>Origen actual:</strong> ${origin}<br>
+                    <strong>Destino:</strong> ${API_URL}<br><br>
+                    <strong>Solución en el servidor:</strong><br>
+                    Editar <code>server.js</code> y añadir:<br>
+                    <pre>
+const cors = require('cors');
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));</pre>
+                `, 'error');
+            }
+        }
+
+        function showSystemInfo() {
+            const info = {
+                'Hostname': window.location.hostname,
+                'Protocol': window.location.protocol,
+                'Port': window.location.port || '(default)',
+                'Origin': window.location.origin,
+                'URL Backend': API_URL,
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Online': navigator.onLine ? 'Sí' : 'No',
+                'Cookies Enabled': navigator.cookieEnabled ? 'Sí' : 'No'
+            };
+
+            let html = '<strong>📊 INFORMACIÓN DEL SISTEMA</strong><br><br>';
+            html += '<div class="grid">';
+            
+            for (const [key, value] of Object.entries(info)) {
+                html += `
+                    <div class="info-card">
+                        <strong>${key}</strong>
+                        <span>${value}</span>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+
+            showResult('result4', html, 'info');
+        }
+
+        // Auto-test al cargar la página
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testConnectivity();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

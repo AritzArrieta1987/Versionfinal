@@ -10,7 +10,7 @@
           "react-dom": "^18.3.1",
           "react-router": "*",
           "recharts": "*",
-          "sonner": "*",
+          "sonner": "^2.0.3",
           "tailwindcss": "*",
           "vite": "*"
       },

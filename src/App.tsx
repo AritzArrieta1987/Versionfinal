@@ -1,9 +1,17 @@
 import { useState, useEffect } from 'react';
-import { RouterProvider } from 'react-router';
+import { RouterProvider, createBrowserRouter } from 'react-router';
 import LoginPanel from './components/LoginPanel';
 import ArtistPortal from './components/ArtistPortal';
+import AdminLayout from './components/AdminLayout';
 import { Toaster } from './components/Toaster';
-import { router } from './routes';
+import { HomePage } from './pages/HomePage';
+import { ArtistsPage } from './pages/ArtistsPage';
+import { CatalogPage } from './pages/CatalogPage';
+import { RoyaltiesPage } from './pages/RoyaltiesPage';
+import { ContractsPage } from './pages/ContractsPage';
+import { UploadPage } from './pages/UploadPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import './utils/debug'; // Importar debug tools
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -46,6 +54,44 @@ export default function App() {
     setUserType(null);
   };
 
+  // Router para admin con AdminLayout
+  const adminRouter = createBrowserRouter([
+    {
+      path: '/',
+      element: <AdminLayout onLogout={handleLogout} />,
+      children: [
+        {
+          index: true,
+          element: <HomePage />
+        },
+        {
+          path: 'artists',
+          element: <ArtistsPage />
+        },
+        {
+          path: 'catalog',
+          element: <CatalogPage />
+        },
+        {
+          path: 'royalties',
+          element: <RoyaltiesPage />
+        },
+        {
+          path: 'contracts',
+          element: <ContractsPage />
+        },
+        {
+          path: 'upload',
+          element: <UploadPage />
+        },
+        {
+          path: '*',
+          element: <NotFoundPage />
+        }
+      ]
+    }
+  ]);
+
   if (!isLoggedIn) {
     return <LoginPanel onLoginSuccess={handleLoginSuccess} />;
   }
@@ -59,7 +105,7 @@ export default function App() {
   return (
     <>
       <Toaster />
-      <RouterProvider router={router} />
+      <RouterProvider router={adminRouter} />
     </>
   );
 }
