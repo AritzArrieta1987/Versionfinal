@@ -11,6 +11,7 @@ import { RoyaltiesPage } from './pages/RoyaltiesPage';
 import { ContractsPage } from './pages/ContractsPage';
 import { UploadPage } from './pages/UploadPage';
 import { FinancesPage } from './pages/FinancesPage';
+import { ArtistPortalPage } from './pages/ArtistPortalPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import './utils/debug'; // Importar debug tools
 
@@ -100,6 +101,10 @@ export default function App() {
           element: <NotFoundPage />
         }
       ]
+    },
+    {
+      path: '/artist/:artistId',
+      element: <ArtistPortalPage />
     }
   ]);
 
