@@ -9,7 +9,8 @@ import {
   Bell, 
   LogOut,
   Upload,
-  Settings
+  Settings,
+  Wallet
 } from 'lucide-react';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
 import backgroundImage from 'figma:asset/0a2a9faa1b59d5fa1e388a2eec5b08498dd7a493.png';
@@ -39,6 +40,7 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
     { name: 'Artistas', path: '/artists', icon: Users },
     { name: 'Catálogo', path: '/catalog', icon: Music },
     { name: 'Royalties', path: '/royalties', icon: DollarSign },
+    { name: 'Finanzas', path: '/finances', icon: Wallet },
     { name: 'Contratos', path: '/contracts', icon: FileText },
     { name: 'Subir CSV', path: '/upload', icon: Upload },
   ];
@@ -361,8 +363,8 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
             boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.4)',
             padding: '8px 0 calc(8px + env(safe-area-inset-bottom))',
             display: 'grid',
-            gridTemplateColumns: 'repeat(6, 1fr)',
-            gap: '4px'
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gap: '2px'
           }}>
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -377,7 +379,7 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '4px',
-                    padding: '8px 4px',
+                    padding: '8px 2px',
                     border: 'none',
                     background: 'transparent',
                     color: isActive ? '#c9a574' : 'rgba(255, 255, 255, 0.5)',
@@ -385,9 +387,9 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  <Icon size={20} />
+                  <Icon size={18} />
                   <span style={{
-                    fontSize: '10px',
+                    fontSize: '9px',
                     fontWeight: isActive ? '600' : '500',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
