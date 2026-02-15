@@ -10,6 +10,7 @@ import { CatalogPage } from './pages/CatalogPage';
 import { RoyaltiesPage } from './pages/RoyaltiesPage';
 import { ContractsPage } from './pages/ContractsPage';
 import { UploadPage } from './pages/UploadPage';
+import { FinancesPage } from './pages/FinancesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import './utils/debug'; // Importar debug tools
 
@@ -89,6 +90,10 @@ export default function App() {
         {
           path: 'upload',
           element: <UploadPage />
+        },
+        {
+          path: 'finances',
+          element: <FinancesPage />
         },
         {
           path: '*',
