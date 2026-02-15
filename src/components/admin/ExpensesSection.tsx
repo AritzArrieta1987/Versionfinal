@@ -68,11 +68,11 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
   });
 
   const categoryColors: { [key: string]: string } = {
-    operativo: '#60a5fa',
-    marketing: '#f59e0b',
-    distribucion: '#8b5cf6',
-    legal: '#ef4444',
-    otros: '#6b7280'
+    operativo: '#c9a574',
+    marketing: '#c9a574',
+    distribucion: '#c9a574',
+    legal: '#c9a574',
+    otros: '#c9a574'
   };
 
   const categoryLabels: { [key: string]: string } = {
@@ -196,7 +196,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
           background: 'rgba(42, 63, 63, 0.4)',
           borderRadius: '16px',
           padding: '24px',
-          border: '1px solid rgba(96, 165, 250, 0.3)'
+          border: '1px solid rgba(201, 165, 116, 0.3)'
         }}>
           <div style={{
             fontSize: '12px',
@@ -210,7 +210,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
           <div style={{
             fontSize: '28px',
             fontWeight: '700',
-            color: '#60a5fa',
+            color: '#c9a574',
             marginBottom: '8px'
           }}>
             €{(expensesByCategory.operativo || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
@@ -225,7 +225,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
           background: 'rgba(42, 63, 63, 0.4)',
           borderRadius: '16px',
           padding: '24px',
-          border: '1px solid rgba(245, 158, 11, 0.3)'
+          border: '1px solid rgba(201, 165, 116, 0.3)'
         }}>
           <div style={{
             fontSize: '12px',
@@ -239,7 +239,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
           <div style={{
             fontSize: '28px',
             fontWeight: '700',
-            color: '#f59e0b',
+            color: '#c9a574',
             marginBottom: '8px'
           }}>
             €{(expensesByCategory.marketing || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
@@ -254,7 +254,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
           background: 'rgba(42, 63, 63, 0.4)',
           borderRadius: '16px',
           padding: '24px',
-          border: '1px solid rgba(139, 92, 246, 0.3)'
+          border: '1px solid rgba(201, 165, 116, 0.3)'
         }}>
           <div style={{
             fontSize: '12px',
@@ -268,7 +268,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
           <div style={{
             fontSize: '28px',
             fontWeight: '700',
-            color: '#8b5cf6',
+            color: '#c9a574',
             marginBottom: '8px'
           }}>
             €{(expensesByCategory.distribucion || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
@@ -325,7 +325,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
                   formatter={(value: any) => [`€${value.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`, '']}
                   labelStyle={{ color: '#c9a574' }}
                 />
-                <Bar dataKey="value" fill="#ef4444" radius={[8, 8, 0, 0]}>
+                <Bar dataKey="value" fill="#c9a574" radius={[8, 8, 0, 0]}>
                   {categoryChartData.map((entry, index) => (
                     <rect key={`bar-${index}`} fill={entry.color} />
                   ))}
@@ -921,7 +921,7 @@ export function ExpensesSection({ dashboardData, artists }: ExpensesSectionProps
                     textAlign: 'right',
                     fontSize: '16px',
                     fontWeight: '700',
-                    color: '#ef4444'
+                    color: '#c9a574'
                   }}>
                     €{expense.amount.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                   </td>
