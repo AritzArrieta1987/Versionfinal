@@ -1,4 +1,4 @@
-import { User, Mail, Phone, Calendar, FileText } from 'lucide-react';
+import { User, Calendar, FileText } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useNavigate } from 'react-router';
 
@@ -107,24 +107,6 @@ export function ArtistCard({ artist, onClick }: ArtistCardProps) {
 
         {/* Detalles */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {artist.email && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Mail size={14} color="#c9a574" />
-              <span style={{ fontSize: '13px', color: '#AFB3B7' }}>
-                {artist.email}
-              </span>
-            </div>
-          )}
-
-          {artist.phone && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Phone size={14} color="#c9a574" />
-              <span style={{ fontSize: '13px', color: '#AFB3B7' }}>
-                {artist.phone}
-              </span>
-            </div>
-          )}
-
           {artist.contractType && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FileText size={14} color="#c9a574" />

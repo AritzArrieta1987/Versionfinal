@@ -170,56 +170,6 @@ export function ArtistsPage() {
         </button>
       </div>
 
-      {/* Estadísticas rápidas */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
-        marginBottom: '32px',
-      }}>
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
-          border: '1px solid rgba(201, 165, 116, 0.2)',
-          borderRadius: '12px',
-          padding: '20px',
-        }}>
-          <div style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '8px' }}>
-            Total Artistas
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#c9a574' }}>
-            {artists.length}
-          </div>
-        </div>
-
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
-          border: '1px solid rgba(201, 165, 116, 0.2)',
-          borderRadius: '12px',
-          padding: '20px',
-        }}>
-          <div style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '8px' }}>
-            Ganancias Totales
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#c9a574' }}>
-            €{artists.reduce((sum, a) => sum + (a.totalEarnings || 0), 0).toLocaleString('es-ES')}
-          </div>
-        </div>
-
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
-          border: '1px solid rgba(201, 165, 116, 0.2)',
-          borderRadius: '12px',
-          padding: '20px',
-        }}>
-          <div style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '8px' }}>
-            Nuevos Este Mes
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#c9a574' }}>
-            2
-          </div>
-        </div>
-      </div>
-
       {/* Grid de tarjetas de artistas */}
       {filteredArtists.length > 0 ? (
         <div style={{
