@@ -16,12 +16,7 @@ interface ExpensesSectionProps {
 }
 
 export function ExpensesSection({ isMobile = false }: ExpensesSectionProps) {
-  const [expenses, setExpenses] = useState<Expense[]>([
-    { id: 1, description: 'Pago de royalties - Enero', amount: 25000, category: 'operativo', date: '2024-01-15', paymentMethod: 'Transferencia' },
-    { id: 2, description: 'Campaña publicitaria Spotify', amount: 5500, category: 'marketing', date: '2024-01-20', paymentMethod: 'Tarjeta' },
-    { id: 3, description: 'Distribución digital - The Orchard', amount: 3200, category: 'distribucion', date: '2024-01-25', paymentMethod: 'Transferencia' },
-    { id: 4, description: 'Honorarios legales', amount: 2100, category: 'legal', date: '2024-01-28', paymentMethod: 'Transferencia' },
-  ]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);

@@ -3,71 +3,9 @@ import { useState } from 'react';
 import { ArtistCard } from '../components/admin/ArtistCard';
 import { AddArtistModal } from '../components/admin/AddArtistModal';
 
-// Mock data - En producción esto vendría de la API
-const MOCK_ARTISTS = [
-  {
-    id: 1,
-    name: 'Luna García',
-    email: 'luna@bigartist.es',
-    phone: '+34 612 345 678',
-    photo: 'https://images.unsplash.com/photo-1615748561835-cff146a0b3a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmZW1hbGUlMjBzaW5nZXIlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NzExOTk1Mjl8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    contractType: 'Contrato 360°',
-    joinDate: '2024-01-15',
-    totalEarnings: 45789.50,
-  },
-  {
-    id: 2,
-    name: 'Carlos Beats',
-    email: 'carlos@bigartist.es',
-    phone: '+34 623 456 789',
-    photo: 'https://images.unsplash.com/photo-1608357501758-430201af2e56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYWxlJTIwcmFwcGVyJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcxMTk5NTI5fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    contractType: 'Distribución Digital',
-    joinDate: '2023-08-22',
-    totalEarnings: 78456.25,
-  },
-  {
-    id: 3,
-    name: 'DJ Martina',
-    email: 'martina@bigartist.es',
-    phone: '+34 634 567 890',
-    photo: 'https://images.unsplash.com/photo-1764014353079-08ece464a226?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxESiUyMHByb2R1Y2VyJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzcxMTk5NTMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-    contractType: 'Producción Musical',
-    joinDate: '2024-03-10',
-    totalEarnings: 32145.80,
-  },
-  {
-    id: 4,
-    name: 'Miguel Ángel',
-    email: 'miguel@bigartist.es',
-    phone: '+34 645 678 901',
-    photo: 'https://images.unsplash.com/photo-1671786390055-13842b30e424?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMGFydGlzdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc3MTE3NjUwNXww&ixlib=rb-4.1.0&q=80&w=1080',
-    contractType: 'Contrato 360°',
-    joinDate: '2023-11-05',
-    totalEarnings: 89234.60,
-  },
-  {
-    id: 5,
-    name: 'Sara Melodías',
-    email: 'sara@bigartist.es',
-    phone: '+34 656 789 012',
-    contractType: 'Distribución Digital',
-    joinDate: '2024-02-18',
-    totalEarnings: 28567.40,
-  },
-  {
-    id: 6,
-    name: 'Pablo Flow',
-    email: 'pablo@bigartist.es',
-    phone: '+34 667 890 123',
-    contractType: 'Producción Musical',
-    joinDate: '2023-12-01',
-    totalEarnings: 51890.75,
-  },
-];
-
 export function ArtistsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [artists, setArtists] = useState(MOCK_ARTISTS);
+  const [artists, setArtists] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
 
   // Filtrar artistas por búsqueda

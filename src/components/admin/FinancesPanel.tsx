@@ -1328,61 +1328,32 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               }}>
                 Comparativa Ingresos vs Gastos
               </h3>
-              <div style={{ height: isMobile ? '250px' : '300px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={[
-                      { mes: 'Ene', ingresos: 45000, gastos: 8500 },
-                      { mes: 'Feb', ingresos: 52000, gastos: 9200 },
-                      { mes: 'Mar', ingresos: 48000, gastos: 8800 },
-                      { mes: 'Abr', ingresos: 61000, gastos: 10500 },
-                      { mes: 'May', ingresos: 55000, gastos: 9800 },
-                      { mes: 'Jun', ingresos: 67000, gastos: 11200 }
-                    ]}
-                    margin={{ top: 5, right: isMobile ? 10 : 30, left: isMobile ? 0 : 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                    <XAxis
-                      dataKey="mes"
-                      stroke="rgba(255, 255, 255, 0.6)"
-                      style={{ fontSize: isMobile ? '10px' : '12px' }}
-                    />
-                    <YAxis
-                      stroke="rgba(255, 255, 255, 0.6)"
-                      style={{ fontSize: isMobile ? '10px' : '12px' }}
-                      tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'rgba(42, 63, 63, 0.95)',
-                        border: '1px solid rgba(201, 165, 116, 0.3)',
-                        borderRadius: '8px',
-                        color: '#ffffff',
-                        fontSize: isMobile ? '12px' : '14px'
-                      }}
-                      formatter={(value: any) => [`€${value.toLocaleString()}`, '']}
-                      labelStyle={{ color: '#c9a574' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="ingresos" 
-                      stroke="#c9a574" 
-                      strokeWidth={isMobile ? 2 : 3}
-                      dot={{ fill: '#c9a574', r: isMobile ? 3 : 5 }}
-                      activeDot={{ r: isMobile ? 5 : 7 }}
-                      name="Ingresos"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="gastos" 
-                      stroke="#ef4444" 
-                      strokeWidth={isMobile ? 2 : 3}
-                      dot={{ fill: '#ef4444', r: isMobile ? 3 : 5 }}
-                      activeDot={{ r: isMobile ? 5 : 7 }}
-                      name="Gastos"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div style={{ 
+                padding: isMobile ? '40px 16px' : '60px 24px', 
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: isMobile ? '200px' : '250px'
+              }}>
+                <TrendingUp size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, marginBottom: '16px' }} />
+                <h4 style={{
+                  fontSize: isMobile ? '16px' : '18px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  marginBottom: '8px'
+                }}>
+                  No hay datos disponibles
+                </h4>
+                <p style={{
+                  fontSize: isMobile ? '13px' : '14px',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  maxWidth: '400px',
+                  margin: '0 auto'
+                }}>
+                  La comparativa se mostrará cuando haya datos de ingresos y gastos registrados
+                </p>
               </div>
             </div>
 
@@ -1406,127 +1377,24 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   Reportes Generados
                 </h3>
               </div>
-              <div style={{ padding: '0' }}>
-                {[
-                  { name: 'Reporte Enero 2026', date: '01/02/2026', size: '2.4 MB', type: 'Mensual' },
-                  { name: 'Reporte Diciembre 2025', date: '01/01/2026', size: '2.2 MB', type: 'Mensual' },
-                  { name: 'Reporte Q4 2025', date: '01/01/2026', size: '6.8 MB', type: 'Trimestral' },
-                  { name: 'Reporte Noviembre 2025', date: '01/12/2025', size: '2.1 MB', type: 'Mensual' },
-                  { name: 'Reporte Anual 2025', date: '01/01/2026', size: '15.3 MB', type: 'Anual' }
-                ].map((report, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      padding: isMobile ? '14px 16px' : '20px 24px',
-                      borderBottom: index < 4 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
-                      display: 'flex',
-                      flexDirection: isMobile ? 'column' : 'row',
-                      alignItems: isMobile ? 'flex-start' : 'center',
-                      justifyContent: 'space-between',
-                      gap: isMobile ? '12px' : '0',
-                      transition: 'background 0.2s ease',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(201, 165, 116, 0.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '16px', flex: 1 }}>
-                      <div style={{
-                        width: isMobile ? '40px' : '44px',
-                        height: isMobile ? '40px' : '44px',
-                        borderRadius: '12px',
-                        background: 'rgba(201, 165, 116, 0.15)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        <FileText size={isMobile ? 18 : 20} color="#c9a574" />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: isMobile ? '13px' : '14px',
-                          fontWeight: '600',
-                          color: '#ffffff',
-                          marginBottom: '4px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {report.name}
-                        </div>
-                        <div style={{
-                          fontSize: isMobile ? '11px' : '12px',
-                          color: 'rgba(255, 255, 255, 0.5)'
-                        }}>
-                          {report.date} · {report.size} · {report.type}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: isMobile ? '8px' : '12px', width: isMobile ? '100%' : 'auto' }}>
-                      <button
-                        onClick={() => alert('Vista previa del reporte')}
-                        style={{
-                          flex: isMobile ? 1 : 'initial',
-                          padding: isMobile ? '8px 14px' : '8px 16px',
-                          background: 'rgba(201, 165, 116, 0.1)',
-                          border: '1px solid rgba(201, 165, 116, 0.3)',
-                          borderRadius: '8px',
-                          color: '#c9a574',
-                          fontSize: isMobile ? '12px' : '13px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(201, 165, 116, 0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(201, 165, 116, 0.1)';
-                        }}
-                      >
-                        <Eye size={isMobile ? 12 : 14} />
-                        Ver
-                      </button>
-                      <button
-                        onClick={() => alert('Descargando reporte...')}
-                        style={{
-                          flex: isMobile ? 1 : 'initial',
-                          padding: isMobile ? '8px 14px' : '8px 16px',
-                          background: 'rgba(201, 165, 116, 0.1)',
-                          border: '1px solid rgba(201, 165, 116, 0.3)',
-                          borderRadius: '8px',
-                          color: '#c9a574',
-                          fontSize: isMobile ? '12px' : '13px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(201, 165, 116, 0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(201, 165, 116, 0.1)';
-                        }}
-                      >
-                        <Download size={isMobile ? 12 : 14} />
-                        Descargar
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
+                <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+                <h3 style={{
+                  fontSize: isMobile ? '16px' : '18px',
+                  fontWeight: '600',
+                  color: '#ffffff',
+                  marginBottom: '8px'
+                }}>
+                  No hay reportes generados
+                </h3>
+                <p style={{
+                  fontSize: isMobile ? '13px' : '14px',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  maxWidth: '400px',
+                  margin: '0 auto'
+                }}>
+                  Los reportes se generarán automáticamente cuando haya datos disponibles
+                </p>
               </div>
             </div>
           </div>

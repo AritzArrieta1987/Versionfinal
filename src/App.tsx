@@ -21,6 +21,9 @@ export default function App() {
   const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
+    // Limpiar datos de prueba del localStorage
+    localStorage.removeItem('uploadedCSVs');
+    
     const token = localStorage.getItem('authToken');
     const userStr = localStorage.getItem('user');
     

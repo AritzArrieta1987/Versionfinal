@@ -91,6 +91,23 @@ export function UploadPage() {
 
     // Simular procesamiento (en producción, aquí harías la llamada a la API)
     setTimeout(() => {
+      // Guardar el CSV procesado en localStorage
+      const uploadedFile = {
+        id: Date.now(),
+        fileName: file.name,
+        fileSize: file.size,
+        uploadDate: new Date().toISOString(),
+        rowCount: csvData.length,
+        headers: headers,
+        data: csvData,
+        status: 'processed'
+      };
+
+      // Obtener archivos existentes
+      const existingFiles = JSON.parse(localStorage.getItem('uploadedCSVs') || '[]');
+      existingFiles.unshift(uploadedFile); // Agregar al inicio
+      localStorage.setItem('uploadedCSVs', JSON.stringify(existingFiles));
+
       setIsProcessing(false);
       setUploadStatus('success');
       

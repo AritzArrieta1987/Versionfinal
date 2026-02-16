@@ -48,20 +48,15 @@ export function FinancesPage() {
         setArtists(artistsData.artists || []);
       }
 
-      // Mock payment requests - En producción esto vendría del backend
-      setPaymentRequests([
-        {
-          id: 1,
-          artistName: 'Artista Demo',
-          artistPhoto: '',
-          firstName: 'Juan',
-          lastName: 'Pérez',
-          accountNumber: 'ES91 2100 0418 4502 0005 1332',
-          amount: 1500,
-          status: 'pending',
-          date: new Date().toISOString()
-        }
-      ]);
+      // Cargar solicitudes de pago desde el backend
+      const paymentsRes = await fetch('https://app.bigartist.es/api/payments/requests', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (paymentsRes.ok) {
+        const paymentsData = await paymentsRes.json();
+        setPaymentRequests(paymentsData.requests || []);
+      }
 
     } catch (error) {
       console.error('Error cargando datos financieros:', error);
