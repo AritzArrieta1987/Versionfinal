@@ -1,6 +1,7 @@
 import { Users, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 import { ArtistCard } from '../components/admin/ArtistCard';
+import { AddArtistModal } from '../components/admin/AddArtistModal';
 
 // Mock data - En producción esto vendría de la API
 const MOCK_ARTISTS = [
@@ -66,13 +67,19 @@ const MOCK_ARTISTS = [
 
 export function ArtistsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [artists] = useState(MOCK_ARTISTS);
+  const [artists, setArtists] = useState(MOCK_ARTISTS);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Filtrar artistas por búsqueda
   const filteredArtists = artists.filter(artist =>
     artist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     artist.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleAddArtist = (newArtist: any) => {
+    setArtists([...artists, newArtist]);
+    setShowAddModal(false);
+  };
 
   return (
     <div>
@@ -164,6 +171,7 @@ export function ArtistsPage() {
             e.currentTarget.style.transform = 'translateY(0)';
             e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.3)';
           }}
+          onClick={() => setShowAddModal(true)}
         >
           <Plus size={20} />
           Agregar Artista
@@ -202,6 +210,13 @@ export function ArtistsPage() {
           </p>
         </div>
       )}
+
+      {/* Modal para agregar artista */}
+      <AddArtistModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddArtist}
+      />
     </div>
   );
 }
