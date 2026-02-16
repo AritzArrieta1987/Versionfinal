@@ -1357,44 +1357,92 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               </div>
             </div>
 
-            {/* Lista de Reportes Generados */}
+            {/* Lista de Reportes */}
             <div style={{
-              background: 'rgba(42, 63, 63, 0.3)',
-              borderRadius: isMobile ? '12px' : '16px',
-              border: '1px solid rgba(201, 165, 116, 0.2)',
-              overflow: 'hidden'
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: isMobile ? '20px' : '24px'
             }}>
+              {/* Reportes de Digital */}
               <div style={{
-                padding: isMobile ? '16px' : '24px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                background: 'rgba(42, 63, 63, 0.3)',
+                borderRadius: isMobile ? '12px' : '16px',
+                border: '1px solid rgba(201, 165, 116, 0.2)',
+                overflow: 'hidden'
               }}>
-                <h3 style={{
-                  fontSize: isMobile ? '16px' : '18px',
-                  fontWeight: '700',
-                  color: '#ffffff',
-                  margin: 0
+                <div style={{
+                  padding: isMobile ? '16px' : '24px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
-                  Reportes Generados
-                </h3>
+                  <h3 style={{
+                    fontSize: isMobile ? '16px' : '18px',
+                    fontWeight: '700',
+                    color: '#ffffff',
+                    margin: 0
+                  }}>
+                    Reportes de Digital
+                  </h3>
+                </div>
+                <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
+                  <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+                  <h3 style={{
+                    fontSize: isMobile ? '16px' : '18px',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    marginBottom: '8px'
+                  }}>
+                    No hay reportes de digital
+                  </h3>
+                  <p style={{
+                    fontSize: isMobile ? '13px' : '14px',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    maxWidth: '300px',
+                    margin: '0 auto'
+                  }}>
+                    Los reportes de streaming y plataformas digitales aparecerán aquí
+                  </p>
+                </div>
               </div>
-              <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
-                <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
-                <h3 style={{
-                  fontSize: isMobile ? '16px' : '18px',
-                  fontWeight: '600',
-                  color: '#ffffff',
-                  marginBottom: '8px'
+
+              {/* Ventas de Físico */}
+              <div style={{
+                background: 'rgba(42, 63, 63, 0.3)',
+                borderRadius: isMobile ? '12px' : '16px',
+                border: '1px solid rgba(201, 165, 116, 0.2)',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  padding: isMobile ? '16px' : '24px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
-                  No hay reportes generados
-                </h3>
-                <p style={{
-                  fontSize: isMobile ? '13px' : '14px',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  maxWidth: '400px',
-                  margin: '0 auto'
-                }}>
-                  Los reportes se generarán automáticamente cuando haya datos disponibles
-                </p>
+                  <h3 style={{
+                    fontSize: isMobile ? '16px' : '18px',
+                    fontWeight: '700',
+                    color: '#ffffff',
+                    margin: 0
+                  }}>
+                    Ventas de Físico
+                  </h3>
+                </div>
+                <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
+                  <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+                  <h3 style={{
+                    fontSize: isMobile ? '16px' : '18px',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    marginBottom: '8px'
+                  }}>
+                    No hay ventas de físico
+                  </h3>
+                  <p style={{
+                    fontSize: isMobile ? '13px' : '14px',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    maxWidth: '300px',
+                    margin: '0 auto'
+                  }}>
+                    Las ventas de CDs, vinilos y merchandising aparecerán aquí
+                  </p>
+                </div>
               </div>
             </div>
           </div>

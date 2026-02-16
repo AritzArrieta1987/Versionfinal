@@ -7,7 +7,6 @@ import { Toaster } from './components/Toaster';
 import { HomePage } from './pages/HomePage';
 import { ArtistsPage } from './pages/ArtistsPage';
 import { CatalogPage } from './pages/CatalogPage';
-import { RoyaltiesPage } from './pages/RoyaltiesPage';
 import { ContractsPage } from './pages/ContractsPage';
 import { UploadPage } from './pages/UploadPage';
 import { FinancesPage } from './pages/FinancesPage';
@@ -82,10 +81,6 @@ export default function App() {
         {
           path: 'catalog',
           element: <CatalogPage />
-        },
-        {
-          path: 'royalties',
-          element: <RoyaltiesPage />
         },
         {
           path: 'contracts',

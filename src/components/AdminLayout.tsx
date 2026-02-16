@@ -39,7 +39,6 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Artistas', path: '/artists', icon: Users },
     { name: 'Catálogo', path: '/catalog', icon: Music },
-    { name: 'Royalties', path: '/royalties', icon: DollarSign },
     { name: 'Finanzas', path: '/finances', icon: Wallet },
     { name: 'Contratos', path: '/contracts', icon: FileText },
     { name: 'Subir CSV', path: '/upload', icon: Upload },
