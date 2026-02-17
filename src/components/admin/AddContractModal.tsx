@@ -474,7 +474,7 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
                 }}
               >
                 <Percent size={16} />
-                Porcentaje de Royalties *
+                Porcentaje de Royalties para el Artista *
               </label>
               <input
                 type="number"
@@ -499,6 +499,36 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
                 <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>
                   {errors.royaltyPercentage}
                 </p>
+              )}
+              {formData.royaltyPercentage && !errors.royaltyPercentage && (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px 16px',
+                  background: 'rgba(201, 165, 116, 0.1)',
+                  border: '1px solid rgba(201, 165, 116, 0.2)',
+                  borderRadius: '8px',
+                  fontSize: '13px'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    marginBottom: '6px',
+                    color: '#4ade80',
+                    fontWeight: '600'
+                  }}>
+                    <span>🎤 Artista:</span>
+                    <span>{parseFloat(formData.royaltyPercentage).toFixed(2)}%</span>
+                  </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    color: '#fb923c',
+                    fontWeight: '600'
+                  }}>
+                    <span>🏢 BIGARTIST (Compañía):</span>
+                    <span>{(100 - parseFloat(formData.royaltyPercentage)).toFixed(2)}%</span>
+                  </div>
+                </div>
               )}
             </div>
 

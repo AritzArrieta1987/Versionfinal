@@ -253,6 +253,10 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
     { name: 'Configuración', icon: Settings }
   ];
 
+  // Calcular el porcentaje de royalty desde los contratos activos
+  const activeContract = contracts.find(c => c.status === 'active');
+  const royaltyPercentage = activeContract?.royaltyPercentage || data.royaltyPercentage || 50;
+
   const renderContent = () => {
     switch (activeTab) {
       case 'Dashboard':
@@ -365,7 +369,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(data.artistRoyalty || (data.totalRevenue * ((data.royaltyPercentage || 50) / 100)))}
+                  {formatEuro(data.artistRoyalty || (data.totalRevenue * (royaltyPercentage / 100)))}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -374,7 +378,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <span>{data.royaltyPercentage || 50}% para el artista</span>
+                  <span>{royaltyPercentage}% para el artista</span>
                 </div>
               </div>
 
@@ -421,7 +425,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(data.labelShare || (data.totalRevenue * ((100 - (data.royaltyPercentage || 50)) / 100)))}
+                  {formatEuro(data.labelShare || (data.totalRevenue * ((100 - royaltyPercentage) / 100)))}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -430,7 +434,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <span>{100 - (data.royaltyPercentage || 50)}% para el sello</span>
+                  <span>{100 - royaltyPercentage}% para el sello</span>
                 </div>
               </div>
             </div>
