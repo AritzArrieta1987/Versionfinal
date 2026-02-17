@@ -1,17 +1,6 @@
+import { LayoutDashboard, Users, Music, Wallet, FileText, Upload, Bell, Zap, Menu, X, Home, LogOut, Trash2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Music, 
-  FileText, 
-  DollarSign, 
-  Bell, 
-  LogOut,
-  Upload,
-  Settings,
-  Wallet
-} from 'lucide-react';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
 import backgroundImage from 'figma:asset/0a2a9faa1b59d5fa1e388a2eec5b08498dd7a493.png';
 
@@ -33,6 +22,7 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
   }>>([]);
   const notificationRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Tabs del menú
   const tabs = [
@@ -43,6 +33,24 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
     { name: 'Contratos', path: '/contracts', icon: FileText },
     { name: 'Subir CSV', path: '/upload', icon: Upload },
   ];
+
+  // Función para resetear todos los datos
+  const handleResetAllData = () => {
+    // Limpiar todo el localStorage excepto el token de autenticación
+    const token = localStorage.getItem('token');
+    const email = localStorage.getItem('userEmail');
+    
+    localStorage.clear();
+    
+    // Restaurar token de autenticación
+    if (token) localStorage.setItem('token', token);
+    if (email) localStorage.setItem('userEmail', email);
+    
+    setShowResetConfirm(false);
+    
+    // Recargar la página para reflejar los cambios
+    window.location.reload();
+  };
 
   // Detectar mobile
   useEffect(() => {
@@ -93,9 +101,10 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
         backgroundImage: `url(${backgroundImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center 40%',
-        opacity: 0.25,
+        opacity: 0.15,
         filter: 'blur(0px)',
-        zIndex: 0
+        zIndex: -3,
+        pointerEvents: 'none'
       }} />
 
       {/* OVERLAY VERDE GLOBAL */}
@@ -104,17 +113,19 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
         inset: 0,
         background: 'linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%)',
         backdropFilter: 'blur(2px)',
-        opacity: 0.75,
-        zIndex: 0
+        opacity: 0.7,
+        zIndex: -2,
+        pointerEvents: 'none'
       }} />
 
       {/* CAPA DE TINTE VERDE GLOBAL */}
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(15, 32, 39, 0.3)',
+        background: 'rgba(15, 32, 39, 0.25)',
         mixBlendMode: 'multiply' as const,
-        zIndex: 0
+        zIndex: -1,
+        pointerEvents: 'none'
       }} />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
@@ -193,6 +204,34 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
 
           {/* Notificaciones y Logout */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            {/* Botón de Resetear Datos */}
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                background: 'rgba(251, 146, 60, 0.15)',
+                border: '1px solid rgba(251, 146, 60, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(251, 146, 60, 0.25)';
+                e.currentTarget.style.borderColor = 'rgba(251, 146, 60, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(251, 146, 60, 0.15)';
+                e.currentTarget.style.borderColor = 'rgba(251, 146, 60, 0.3)';
+              }}
+              title="Resetear todos los datos"
+            >
+              <Trash2 size={20} color="#fb923c" />
+            </button>
+
             <div style={{ position: 'relative' }} ref={notificationRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -402,6 +441,137 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de confirmación para resetear datos */}
+      {showResetConfirm && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(30, 47, 47, 0.98) 0%, rgba(20, 35, 35, 0.98) 100%)',
+            border: '1px solid rgba(251, 146, 60, 0.3)',
+            borderRadius: '20px',
+            padding: isMobile ? '24px' : '32px',
+            maxWidth: '500px',
+            width: '100%',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'rgba(251, 146, 60, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}>
+                <Trash2 size={32} color="#fb923c" />
+              </div>
+              <h3 style={{ fontSize: '24px', fontWeight: '700', color: '#ffffff', marginBottom: '8px' }}>
+                ¿Resetear todos los datos?
+              </h3>
+              <p style={{ fontSize: '14px', color: '#AFB3B7', lineHeight: '1.6' }}>
+                Esta acción eliminará permanentemente:
+              </p>
+            </div>
+
+            <div style={{
+              background: 'rgba(42, 63, 63, 0.4)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginBottom: '24px'
+            }}>
+              <ul style={{ margin: 0, padding: '0 0 0 20px', fontSize: '14px', color: '#ffffff', lineHeight: '2' }}>
+                <li>Todos los archivos CSV subidos</li>
+                <li>Todos los artistas creados</li>
+                <li>Todo el catálogo musical</li>
+                <li>Todos los audios cargados</li>
+                <li>Todas las estadísticas y métricas</li>
+                <li>Todos los contratos y royalties</li>
+              </ul>
+            </div>
+
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: '600' }}>⚠️ Advertencia:</div>
+              <div style={{ color: '#AFB3B7', fontSize: '13px' }}>
+                Esta acción NO se puede deshacer. Tu sesión se mantendrá activa.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '14px 24px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(201, 165, 116, 0.3)',
+                  background: 'rgba(42, 63, 63, 0.4)',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(42, 63, 63, 0.6)';
+                  e.currentTarget.style.borderColor = 'rgba(201, 165, 116, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(42, 63, 63, 0.4)';
+                  e.currentTarget.style.borderColor = 'rgba(201, 165, 116, 0.3)';
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResetAllData}
+                style={{
+                  flex: 1,
+                  padding: '14px 24px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(251, 146, 60, 0.5)',
+                  background: 'rgba(251, 146, 60, 0.2)',
+                  color: '#fb923c',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(251, 146, 60, 0.3)';
+                  e.currentTarget.style.borderColor = 'rgba(251, 146, 60, 0.7)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(251, 146, 60, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(251, 146, 60, 0.5)';
+                }}
+              >
+                Sí, resetear todo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

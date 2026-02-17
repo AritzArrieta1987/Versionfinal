@@ -1,19 +1,35 @@
-import { Music, Search, Disc, Play } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Music, Search, Disc, Play, Pause, Volume2, SkipBack, SkipForward, Upload, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 export function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [tracks, setTracks] = useState([]);
   const [filterArtist, setFilterArtist] = useState('all');
   const [artists, setArtists] = useState([]);
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [uploadingTrackId, setUploadingTrackId] = useState(null);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     loadTracksFromCSV();
   }, []);
 
+  useEffect(() => {
+    // Cargar audios desde localStorage
+    const savedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
+    setTracks(prevTracks => prevTracks.map(track => ({
+      ...track,
+      audioUrl: savedAudios[track.id] || null
+    })));
+  }, []);
+
   const loadTracksFromCSV = () => {
     // Cargar datos del CSV procesado
     const uploadedCSVs = JSON.parse(localStorage.getItem('uploadedCSVs') || '[]');
+    const savedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
     
     if (uploadedCSVs.length > 0 && uploadedCSVs[0].processedData) {
       const processedData = uploadedCSVs[0].processedData;
@@ -27,21 +43,116 @@ export function CatalogPage() {
         artistNames.add(artist.name);
         
         artist.tracks.forEach(track => {
+          const trackId = track.isrc || `${artist.name}-${track.name}`;
           allTracks.push({
-            id: track.isrc || `${artist.name}-${track.name}`,
+            id: trackId,
             name: track.name,
             artistName: artist.name,
             release: track.release,
             isrc: track.isrc,
             revenue: track.revenue,
             streams: track.streams,
-            platforms: track.platforms
+            platforms: track.platforms,
+            audioUrl: savedAudios[trackId] || null
           });
         });
       });
       
       setTracks(allTracks);
       setArtists(['all', ...Array.from(artistNames)]);
+    }
+  };
+
+  const handleAudioUpload = (trackId, event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('audio/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const audioUrl = e.target.result;
+        
+        // Guardar en localStorage
+        const savedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
+        savedAudios[trackId] = audioUrl;
+        localStorage.setItem('trackAudios', JSON.stringify(savedAudios));
+        
+        // Actualizar tracks
+        setTracks(prevTracks => prevTracks.map(track => 
+          track.id === trackId ? { ...track, audioUrl } : track
+        ));
+        
+        setUploadingTrackId(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const playTrack = (track) => {
+    if (!track.audioUrl) {
+      setUploadingTrackId(track.id);
+      return;
+    }
+
+    if (currentTrack?.id === track.id) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    } else {
+      setCurrentTrack(track);
+      setIsPlaying(true);
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.play();
+        }
+      }, 100);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    setCurrentTime(audioRef.current.currentTime);
+  };
+
+  const handleLoadedMetadata = () => {
+    setDuration(audioRef.current.duration);
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+  };
+
+  const handleSeek = (e) => {
+    const seekTime = (e.nativeEvent.offsetX / e.currentTarget.offsetWidth) * duration;
+    audioRef.current.currentTime = seekTime;
+    setCurrentTime(seekTime);
+  };
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const playNext = () => {
+    const currentIndex = filteredTracks.findIndex(t => t.id === currentTrack?.id);
+    if (currentIndex < filteredTracks.length - 1) {
+      const nextTrack = filteredTracks[currentIndex + 1];
+      if (nextTrack.audioUrl) {
+        playTrack(nextTrack);
+      }
+    }
+  };
+
+  const playPrevious = () => {
+    const currentIndex = filteredTracks.findIndex(t => t.id === currentTrack?.id);
+    if (currentIndex > 0) {
+      const prevTrack = filteredTracks[currentIndex - 1];
+      if (prevTrack.audioUrl) {
+        playTrack(prevTrack);
+      }
     }
   };
 
@@ -265,7 +376,9 @@ export function CatalogPage() {
             </thead>
             <tbody>
               {filteredTracks.map((track, index) => (
-                <tr key={track.id || index}>
+                <tr key={track.id || index} style={{
+                  background: currentTrack?.id === track.id ? 'rgba(201, 165, 116, 0.1)' : 'transparent'
+                }}>
                   <td style={{
                     padding: '12px',
                     borderBottom: '1px solid rgba(201, 165, 116, 0.1)',
@@ -273,8 +386,56 @@ export function CatalogPage() {
                     color: '#ffffff'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Play size={16} color="#c9a574" />
+                      <button
+                        onClick={() => playTrack(track)}
+                        style={{
+                          background: track.audioUrl ? 'rgba(201, 165, 116, 0.2)' : 'rgba(201, 165, 116, 0.1)',
+                          border: '1px solid #c9a574',
+                          borderRadius: '50%',
+                          width: '32px',
+                          height: '32px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(201, 165, 116, 0.4)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = track.audioUrl ? 'rgba(201, 165, 116, 0.2)' : 'rgba(201, 165, 116, 0.1)'}
+                      >
+                        {currentTrack?.id === track.id && isPlaying ? (
+                          <Pause size={16} color="#c9a574" />
+                        ) : track.audioUrl ? (
+                          <Play size={16} color="#c9a574" />
+                        ) : (
+                          <Upload size={16} color="#c9a574" />
+                        )}
+                      </button>
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => handleAudioUpload(track.id, e)}
+                        style={{ display: 'none' }}
+                        id={`audio-upload-${track.id}`}
+                      />
                       {track.name}
+                      {!track.audioUrl && (
+                        <label
+                          htmlFor={`audio-upload-${track.id}`}
+                          style={{ 
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            color: '#c9a574',
+                            marginLeft: '8px',
+                            padding: '2px 8px',
+                            background: 'rgba(201, 165, 116, 0.1)',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(201, 165, 116, 0.3)'
+                          }}
+                        >
+                          Cargar audio
+                        </label>
+                      )}
                     </div>
                   </td>
                   <td style={{
@@ -346,6 +507,94 @@ export function CatalogPage() {
               ? 'Sube un archivo CSV para ver el catálogo musical' 
               : 'Intenta con otros términos de búsqueda'}
           </p>
+        </div>
+      )}
+
+      {/* Reproductor */}
+      {currentTrack && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.6) 0%, rgba(30, 47, 47, 0.8) 100%)',
+          border: '1px solid rgba(201, 165, 116, 0.3)',
+          borderRadius: '16px',
+          padding: '24px',
+          marginTop: '32px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <SkipBack size={24} color="#c9a574" onClick={playPrevious} />
+              {isPlaying ? (
+                <Pause size={48} color="#c9a574" onClick={() => playTrack(currentTrack)} />
+              ) : (
+                <Play size={48} color="#c9a574" onClick={() => playTrack(currentTrack)} />
+              )}
+              <SkipForward size={24} color="#c9a574" onClick={playNext} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <Volume2 size={24} color="#c9a574" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={audioRef.current ? audioRef.current.volume : 1}
+                onChange={(e) => audioRef.current && (audioRef.current.volume = parseFloat(e.target.value))}
+                style={{
+                  width: '100px',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none'
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', marginTop: '16px' }}>
+            <div style={{ width: '100%', height: '4px', background: 'rgba(201, 165, 116, 0.1)' }}>
+              <div
+                style={{
+                  width: `${(currentTime / duration) * 100}%`,
+                  height: '100%',
+                  background: '#c9a574',
+                  cursor: 'pointer'
+                }}
+                onClick={handleSeek}
+              />
+            </div>
+            <div style={{ marginLeft: '8px', fontSize: '12px', color: '#AFB3B7' }}>
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
+          </div>
+          <audio
+            ref={audioRef}
+            src={currentTrack.audioUrl}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onEnded={handleEnded}
+            style={{ display: 'none' }}
+          />
+          {uploadingTrackId === currentTrack.id && (
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(0, 0, 0, 0.8)',
+              borderRadius: '8px',
+              padding: '16px',
+              color: '#ffffff',
+              fontSize: '14px',
+              textAlign: 'center'
+            }}>
+              <Upload size={24} color="#c9a574" style={{ marginBottom: '8px' }} />
+              Subiendo audio...
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={(e) => handleAudioUpload(currentTrack.id, e)}
+                style={{ display: 'none' }}
+                ref={el => el && el.click()}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

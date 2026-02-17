@@ -90,39 +90,46 @@ export function HomePage() {
     );
   }
 
-  // Stats cards
+  // Calcular métricas - Debe coincidir con el Panel de Finanzas
+  const royaltyPercentage = 70; // 70% para artistas
+  const labelPercentage = 30;   // 30% para BAM
+  const totalRoyalties = stats.totalRevenue;
+  const totalArtista = totalRoyalties * (royaltyPercentage / 100);
+  const totalBAM = totalRoyalties * (labelPercentage / 100);
+
+  // Stats cards - Las mismas 4 métricas que en el Portal del Artista y Panel de Finanzas
   const statsCards = [
     {
-      title: 'Ingresos Totales',
-      value: `$${stats.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      title: 'Total Royalties',
+      value: `${totalRoyalties.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`,
       icon: DollarSign,
-      color: '#22c55e',
-      bgColor: 'rgba(34, 197, 94, 0.1)',
-      trend: '+12.5%'
-    },
-    {
-      title: 'Total Streams',
-      value: stats.totalStreams.toLocaleString('es-ES'),
-      icon: TrendingUp,
-      color: '#3b82f6',
-      bgColor: 'rgba(59, 130, 246, 0.1)',
-      trend: '+8.3%'
-    },
-    {
-      title: 'Artistas Activos',
-      value: stats.totalArtists,
-      icon: Users,
       color: '#c9a574',
       bgColor: 'rgba(201, 165, 116, 0.1)',
-      trend: '+2'
+      subtitle: 'Ingresos totales del CSV'
     },
     {
-      title: 'Canciones',
-      value: stats.totalTracks,
-      icon: Music,
-      color: '#a855f7',
-      bgColor: 'rgba(168, 85, 247, 0.1)',
-      trend: '+15'
+      title: 'Total Artista',
+      value: `${totalArtista.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`,
+      icon: TrendingUp,
+      color: '#4ade80',
+      bgColor: 'rgba(74, 222, 128, 0.1)',
+      subtitle: `${royaltyPercentage}% para artistas`
+    },
+    {
+      title: 'Total BAM',
+      value: `${totalBAM.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`,
+      icon: Calendar,
+      color: '#fb923c',
+      bgColor: 'rgba(251, 146, 60, 0.1)',
+      subtitle: `${labelPercentage}% para el sello`
+    },
+    {
+      title: 'Porcentaje Contrato',
+      value: `${royaltyPercentage}%`,
+      icon: Users,
+      color: '#8b5cf6',
+      bgColor: 'rgba(139, 92, 246, 0.1)',
+      subtitle: 'Split de royalties'
     }
   ];
 
@@ -202,11 +209,8 @@ export function HomePage() {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#22c55e' }}>
-                {card.trend}
-              </span>
-              <span style={{ fontSize: '12px', color: '#AFB3B7' }}>
-                vs. mes anterior
+              <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                {card.subtitle}
               </span>
             </div>
           </div>
@@ -257,7 +261,7 @@ export function HomePage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Gráfico de Territorios */}
+        {/* Lista de Territorios */}
         <div style={{
           background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.6) 0%, rgba(30, 47, 47, 0.8) 100%)',
           border: '1px solid rgba(201, 165, 116, 0.3)',
@@ -267,22 +271,50 @@ export function HomePage() {
           <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#ffffff', marginBottom: '20px' }}>
             Top 5 Territorios
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={topTerritories}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(201, 165, 116, 0.1)" />
-              <XAxis dataKey="name" stroke="#AFB3B7" />
-              <YAxis stroke="#AFB3B7" />
-              <Tooltip
-                contentStyle={{
-                  background: '#2a3f3f',
-                  border: '1px solid #c9a574',
-                  borderRadius: '8px',
-                  color: '#ffffff'
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {topTerritories.map((territory, index) => (
+              <div
+                key={index}
+                style={{
+                  background: 'rgba(42, 63, 63, 0.5)',
+                  border: '1px solid rgba(201, 165, 116, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.3s ease'
                 }}
-              />
-              <Bar dataKey="revenue" fill="#c9a574" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: index === 0 ? 'rgba(201, 165, 116, 0.2)' : 'rgba(201, 165, 116, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#c9a574'
+                  }}>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff' }}>
+                      {territory.name}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: '#c9a574' }}>
+                    €{territory.revenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

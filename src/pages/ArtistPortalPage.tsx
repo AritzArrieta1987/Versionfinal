@@ -50,12 +50,11 @@ export function ArtistPortalPage() {
           tracks: artist.csvData.tracks,
           monthlyData: monthlyData,
           platformBreakdown: platformBreakdown,
-          royaltyPercentage: artistRoyalties?.royaltyPercentage || 50,
-          artistRoyalty: artistRoyalties?.artistRoyalty || 0,
-          labelShare: artistRoyalties?.labelShare || 0,
-          territories: artist.csvData.territories,
-          contractType: artist.contractType,
-          contractPercentage: artist.contractPercentage
+          royaltyPercentage: artist.contractPercentage || artistRoyalties?.royaltyPercentage || 70, // Cambiado a 70%
+          artistRoyalty: artist.totalRevenue * ((artist.contractPercentage || artistRoyalties?.royaltyPercentage || 70) / 100),
+          labelShare: artist.totalRevenue * ((100 - (artist.contractPercentage || artistRoyalties?.royaltyPercentage || 70)) / 100),
+          contractType: artist.contractType || '360',
+          territories: artist.csvData.territories
         });
       } else {
         // Si no hay datos del CSV, cargar desde el backend (si existe)

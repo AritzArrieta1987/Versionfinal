@@ -209,7 +209,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
             {/* Métricas principales */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
               gap: isMobile ? '12px' : '16px',
               marginBottom: '32px'
             }}>
@@ -270,7 +270,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                 </div>
               </div>
 
-              {/* Income */}
+              {/* Total Artista */}
               <div style={{
                 background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
                 border: '1px solid rgba(201, 165, 116, 0.2)',
@@ -288,12 +288,12 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                     width: isMobile ? '40px' : '48px',
                     height: isMobile ? '40px' : '48px',
                     borderRadius: '50%',
-                    background: 'rgba(201, 165, 116, 0.15)',
+                    background: 'rgba(74, 222, 128, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <TrendingUp size={isMobile ? 20 : 24} color="#c9a574" />
+                    <TrendingUp size={isMobile ? 20 : 24} color="#4ade80" />
                   </div>
                   <div style={{
                     fontSize: isMobile ? '9px' : '10px',
@@ -303,31 +303,30 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                     textTransform: 'uppercase',
                     textAlign: 'right'
                   }}>
-                    Total Income
+                    Total Artista
                   </div>
                 </div>
                 <div style={{
                   fontSize: isMobile ? '22px' : '28px',
                   fontWeight: '700',
-                  color: '#ffffff',
+                  color: '#4ade80',
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(data.totalRevenue).split('€')[0]}
+                  {formatEuro(data.artistRoyalty || (data.totalRevenue * ((data.royaltyPercentage || 50) / 100)))}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
-                  color: '#4ade80',
+                  color: '#9ca3af',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <TrendingUp size={isMobile ? 10 : 12} />
-                  <span>Este mes</span>
+                  <span>{data.royaltyPercentage || 50}% para el artista</span>
                 </div>
               </div>
 
-              {/* Streams */}
+              {/* Total BAM (Label Share) */}
               <div style={{
                 background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
                 border: '1px solid rgba(201, 165, 116, 0.2)',
@@ -345,12 +344,12 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                     width: isMobile ? '40px' : '48px',
                     height: isMobile ? '40px' : '48px',
                     borderRadius: '50%',
-                    background: 'rgba(201, 165, 116, 0.15)',
+                    background: 'rgba(251, 146, 60, 0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
-                    <BarChart3 size={isMobile ? 20 : 24} color="#c9a574" />
+                    <Wallet size={isMobile ? 20 : 24} color="#fb923c" />
                   </div>
                   <div style={{
                     fontSize: isMobile ? '9px' : '10px',
@@ -360,84 +359,26 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                     textTransform: 'uppercase',
                     textAlign: 'right'
                   }}>
-                    Total Streams
+                    Total BAM
                   </div>
                 </div>
                 <div style={{
                   fontSize: isMobile ? '22px' : '28px',
                   fontWeight: '700',
-                  color: '#ffffff',
+                  color: '#fb923c',
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {data.totalStreams.toLocaleString()}
+                  {formatEuro(data.labelShare || (data.totalRevenue * ((100 - (data.royaltyPercentage || 50)) / 100)))}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
-                  color: '#4ade80',
+                  color: '#9ca3af',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <TrendingUp size={isMobile ? 10 : 12} />
-                  <span>Reproducciones</span>
-                </div>
-              </div>
-
-              {/* Canciones */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
-                border: '1px solid rgba(201, 165, 116, 0.2)',
-                borderRadius: isMobile ? '16px' : '20px',
-                padding: isMobile ? '16px' : '20px',
-                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4)'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  marginBottom: isMobile ? '12px' : '16px'
-                }}>
-                  <div style={{
-                    width: isMobile ? '40px' : '48px',
-                    height: isMobile ? '40px' : '48px',
-                    borderRadius: '50%',
-                    background: 'rgba(201, 165, 116, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <Music size={isMobile ? 20 : 24} color="#c9a574" />
-                  </div>
-                  <div style={{
-                    fontSize: isMobile ? '9px' : '10px',
-                    fontWeight: '600',
-                    color: '#6b7280',
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    textAlign: 'right'
-                  }}>
-                    Total Canciones
-                  </div>
-                </div>
-                <div style={{
-                  fontSize: isMobile ? '22px' : '28px',
-                  fontWeight: '700',
-                  color: '#ffffff',
-                  letterSpacing: '-0.5px',
-                  marginBottom: isMobile ? '6px' : '8px'
-                }}>
-                  {data.tracks.length}
-                </div>
-                <div style={{
-                  fontSize: isMobile ? '11px' : '12px',
-                  color: '#4ade80',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
-                  <TrendingUp size={isMobile ? 10 : 12} />
-                  <span>En catálogo</span>
+                  <span>{100 - (data.royaltyPercentage || 50)}% para el sello</span>
                 </div>
               </div>
             </div>
