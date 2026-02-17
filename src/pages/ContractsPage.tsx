@@ -1,5 +1,5 @@
 import { FileText, Plus, Search, Filter } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ContractCard } from '../components/admin/ContractCard';
 import { AddContractModal } from '../components/admin/AddContractModal';
 
@@ -8,6 +8,12 @@ export function ContractsPage() {
   const [contracts, setContracts] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'pending'>('all');
+
+  // Cargar contratos desde localStorage al iniciar
+  useEffect(() => {
+    const savedContracts = JSON.parse(localStorage.getItem('contracts') || '[]');
+    setContracts(savedContracts);
+  }, []);
 
   // Filtrar contratos por búsqueda y estado
   const filteredContracts = contracts.filter((contract) => {
@@ -21,7 +27,10 @@ export function ContractsPage() {
   });
 
   const handleAddContract = (newContract: any) => {
-    setContracts([newContract, ...contracts]);
+    const updatedContracts = [newContract, ...contracts];
+    setContracts(updatedContracts);
+    // Guardar en localStorage
+    localStorage.setItem('contracts', JSON.stringify(updatedContracts));
     setShowAddModal(false);
   };
 

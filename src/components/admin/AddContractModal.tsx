@@ -1,5 +1,5 @@
-import { X, FileText, User, Percent, Calendar, FileSignature, FileCheck, Euro } from 'lucide-react';
-import { useState } from 'react';
+import { X, FileText, User, Percent, Calendar, FileSignature, FileCheck, Euro, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface AddContractModalProps {
   isOpen: boolean;
@@ -21,6 +21,31 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [artists, setArtists] = useState<any[]>([]);
+  const [useExistingArtist, setUseExistingArtist] = useState(true);
+
+  // Cargar artistas existentes
+  useEffect(() => {
+    if (isOpen) {
+      const savedArtists = JSON.parse(localStorage.getItem('artists') || '[]');
+      setArtists(savedArtists);
+      
+      // Reset del formulario cuando se abre el modal
+      setFormData({
+        artistName: '',
+        artistPhoto: '',
+        contractType: '',
+        royaltyPercentage: '',
+        startDate: '',
+        endDate: '',
+        status: 'active',
+        isPhysical: false,
+        workBilling: '',
+      });
+      setErrors({});
+      setUseExistingArtist(true);
+    }
+  }, [isOpen]);
 
   const contractTypes = [
     'Contrato 360°',
@@ -201,7 +226,7 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Nombre del artista */}
+            {/* Selector: Artista existente o nuevo */}
             <div>
               <label
                 style={{
@@ -214,75 +239,178 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
                   marginBottom: '8px',
                 }}
               >
-                <User size={16} />
-                Nombre del Artista *
+                <Users size={16} />
+                Seleccionar Artista
               </label>
-              <input
-                type="text"
-                value={formData.artistName}
-                onChange={(e) => handleChange('artistName', e.target.value)}
-                placeholder="Ej: Luna García"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  background: 'rgba(42, 63, 63, 0.5)',
-                  border: `1px solid ${errors.artistName ? '#ef4444' : 'rgba(201, 165, 116, 0.3)'}`,
-                  borderRadius: '10px',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s ease',
-                }}
-                onFocus={(e) => {
-                  if (!errors.artistName) {
-                    e.target.style.borderColor = '#c9a574';
-                  }
-                }}
-                onBlur={(e) => {
-                  if (!errors.artistName) {
-                    e.target.style.borderColor = 'rgba(201, 165, 116, 0.3)';
-                  }
-                }}
-              />
-              {errors.artistName && (
-                <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>
-                  {errors.artistName}
-                </p>
-              )}
-            </div>
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '12px'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setUseExistingArtist(true)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    background: useExistingArtist 
+                      ? 'linear-gradient(135deg, #c9a574 0%, #a68a5e 100%)'
+                      : 'rgba(42, 63, 63, 0.5)',
+                    border: `1px solid ${useExistingArtist ? '#c9a574' : 'rgba(201, 165, 116, 0.3)'}`,
+                    borderRadius: '8px',
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  Artista Existente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseExistingArtist(false);
+                    setFormData({ ...formData, artistName: '', artistPhoto: '' });
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px 16px',
+                    background: !useExistingArtist 
+                      ? 'linear-gradient(135deg, #c9a574 0%, #a68a5e 100%)'
+                      : 'rgba(42, 63, 63, 0.5)',
+                    border: `1px solid ${!useExistingArtist ? '#c9a574' : 'rgba(201, 165, 116, 0.3)'}`,
+                    borderRadius: '8px',
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  Nuevo Artista
+                </button>
+              </div>
 
-            {/* URL de foto (opcional) */}
-            <div>
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#c9a574',
-                  marginBottom: '8px',
-                }}
-              >
-                <User size={16} />
-                URL de Foto (opcional)
-              </label>
-              <input
-                type="url"
-                value={formData.artistPhoto}
-                onChange={(e) => handleChange('artistPhoto', e.target.value)}
-                placeholder="https://..."
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  background: 'rgba(42, 63, 63, 0.5)',
-                  border: '1px solid rgba(201, 165, 116, 0.3)',
-                  borderRadius: '10px',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
-              />
+              {useExistingArtist ? (
+                // Selector de artista existente
+                <>
+                  <select
+                    value={formData.artistName}
+                    onChange={(e) => {
+                      const selectedArtist = artists.find(a => a.name === e.target.value);
+                      if (selectedArtist) {
+                        setFormData({
+                          ...formData,
+                          artistName: selectedArtist.name,
+                          artistPhoto: selectedArtist.photo || ''
+                        });
+                        // Limpiar errores
+                        if (errors.artistName) {
+                          setErrors({ ...errors, artistName: '' });
+                        }
+                      } else {
+                        handleChange('artistName', e.target.value);
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'rgba(42, 63, 63, 0.5)',
+                      border: `1px solid ${errors.artistName ? '#ef4444' : 'rgba(201, 165, 116, 0.3)'}`,
+                      borderRadius: '10px',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="" style={{ background: '#2a3f3f' }}>
+                      Selecciona un artista
+                    </option>
+                    {artists.map((artist) => (
+                      <option key={artist.id} value={artist.name} style={{ background: '#2a3f3f' }}>
+                        {artist.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.artistName && (
+                    <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>
+                      {errors.artistName}
+                    </p>
+                  )}
+                </>
+              ) : (
+                // Campo de texto para nuevo artista
+                <>
+                  <input
+                    type="text"
+                    value={formData.artistName}
+                    onChange={(e) => handleChange('artistName', e.target.value)}
+                    placeholder="Ej: Luna García"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'rgba(42, 63, 63, 0.5)',
+                      border: `1px solid ${errors.artistName ? '#ef4444' : 'rgba(201, 165, 116, 0.3)'}`,
+                      borderRadius: '10px',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease',
+                    }}
+                    onFocus={(e) => {
+                      if (!errors.artistName) {
+                        e.target.style.borderColor = '#c9a574';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.artistName) {
+                        e.target.style.borderColor = 'rgba(201, 165, 116, 0.3)';
+                      }
+                    }}
+                  />
+                  {errors.artistName && (
+                    <p style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>
+                      {errors.artistName}
+                    </p>
+                  )}
+                  
+                  {/* URL de foto solo para nuevos artistas */}
+                  <div style={{ marginTop: '12px' }}>
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#AFB3B7',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <User size={14} />
+                      URL de Foto (opcional)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.artistPhoto}
+                      onChange={(e) => handleChange('artistPhoto', e.target.value)}
+                      placeholder="https://..."
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        background: 'rgba(42, 63, 63, 0.5)',
+                        border: '1px solid rgba(201, 165, 116, 0.3)',
+                        borderRadius: '8px',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Tipo de contrato */}

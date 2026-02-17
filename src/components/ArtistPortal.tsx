@@ -20,6 +20,20 @@ interface ArtistPortalProps {
 }
 
 export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps) {
+  // Datos del artista con fallback
+  const defaultData = {
+    id: 0,
+    name: artistData?.name || 'Artista',
+    email: artistData?.email || 'artist@bigartist.es',
+    totalRevenue: 0,
+    totalStreams: 0,
+    tracks: [],
+    monthlyData: [],
+    platformBreakdown: {}
+  };
+
+  const data = artistData || defaultData;
+
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Array<{
@@ -79,18 +93,28 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
   }, [paymentFormData.firstName, paymentFormData.lastName]);
 
   // Contratos (se llenarán desde el backend)
-  const [contracts] = useState<Array<{
+  const [contracts, setContracts] = useState<Array<{
     id: number;
-    title: string;
-    type: string;
+    artistName: string;
+    contractType: string;
     status: string;
     startDate: string;
     endDate: string;
     royaltyPercentage: number;
-    description: string;
-    territories: string;
-    platforms: string[];
+    totalRevenue?: number;
+    isPhysical?: boolean;
+    workBilling?: string;
   }>>([]);
+
+  // Cargar contratos del artista desde localStorage
+  useEffect(() => {
+    const savedContracts = JSON.parse(localStorage.getItem('contracts') || '[]');
+    // Filtrar contratos que pertenecen a este artista
+    const artistContracts = savedContracts.filter(
+      (contract: any) => contract.artistName === data.name
+    );
+    setContracts(artistContracts);
+  }, [data.name]);
 
   // Estado para contrato seleccionado (modal de detalle)
   const [selectedContract, setSelectedContract] = useState<any>(null);
@@ -228,20 +252,6 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
     { name: 'Contratos', icon: FileText },
     { name: 'Configuración', icon: Settings }
   ];
-
-  // Datos por defecto cuando no hay artistData
-  const defaultData = {
-    id: 0,
-    name: artistData?.name || 'Artista',
-    email: artistData?.email || 'artist@bigartist.es',
-    totalRevenue: 0,
-    totalStreams: 0,
-    tracks: [],
-    monthlyData: [],
-    platformBreakdown: {}
-  };
-
-  const data = artistData || defaultData;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -1610,24 +1620,24 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                           gap: '10px'
                         }}>
                           <FileSignature size={20} color="#c9a574" />
-                          {contract.title}
+                          {contract.contractType}
                         </h3>
                         <div style={{
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
                           padding: '4px 10px',
-                          background: contract.status === 'Activo' ? 'rgba(74, 222, 128, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-                          border: contract.status === 'Activo' ? '1px solid rgba(74, 222, 128, 0.3)' : '1px solid rgba(251, 191, 36, 0.3)',
+                          background: contract.status === 'active' ? 'rgba(74, 222, 128, 0.1)' : contract.status === 'expired' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                          border: contract.status === 'active' ? '1px solid rgba(74, 222, 128, 0.3)' : contract.status === 'expired' ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(251, 191, 36, 0.3)',
                           borderRadius: '8px',
                           fontSize: '11px',
                           fontWeight: '600',
-                          color: contract.status === 'Activo' ? '#4ade80' : '#fbbf24',
+                          color: contract.status === 'active' ? '#4ade80' : contract.status === 'expired' ? '#ef4444' : '#fbbf24',
                           textTransform: 'uppercase',
                           letterSpacing: '0.5px'
                         }}>
-                          {contract.status === 'Activo' ? <CheckCircle size={12} /> : <Clock size={12} />}
-                          {contract.status}
+                          {contract.status === 'active' ? <CheckCircle size={12} /> : <Clock size={12} />}
+                          {contract.status === 'active' ? 'Activo' : contract.status === 'expired' ? 'Expirado' : 'Pendiente'}
                         </div>
                       </div>
                     </div>
@@ -1638,7 +1648,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                       lineHeight: '1.6',
                       marginBottom: '20px'
                     }}>
-                      {contract.description}
+                      Contrato de {contract.contractType} con BIGARTIST ROYALTIES
                     </p>
 
                     <div style={{
@@ -1656,7 +1666,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                           Tipo
                         </div>
                         <div style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff' }}>
-                          {contract.type}
+                          {contract.isPhysical ? 'Físico' : 'Digital'}
                         </div>
                       </div>
                       <div>
@@ -1672,7 +1682,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                           Inicio
                         </div>
                         <div style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>
-                          {contract.startDate}
+                          {new Date(contract.startDate).toLocaleDateString('es-ES')}
                         </div>
                       </div>
                       <div>
@@ -1680,7 +1690,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                           Fin
                         </div>
                         <div style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff' }}>
-                          {contract.endDate}
+                          {new Date(contract.endDate).toLocaleDateString('es-ES')}
                         </div>
                       </div>
                     </div>
@@ -2383,7 +2393,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   gap: isMobile ? '8px' : '12px'
                 }}>
                   <FileSignature size={28} color="#c9a574" />
-                  {selectedContract.title}
+                  {selectedContract.contractType}
                 </h2>
                 <button
                   onClick={() => setSelectedContract(null)}
@@ -2408,17 +2418,17 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                 alignItems: 'center',
                 gap: '6px',
                 padding: '6px 14px',
-                background: selectedContract.status === 'Activo' ? 'rgba(74, 222, 128, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                border: selectedContract.status === 'Activo' ? '1px solid rgba(74, 222, 128, 0.4)' : '1px solid rgba(251, 191, 36, 0.4)',
+                background: selectedContract.status === 'active' ? 'rgba(74, 222, 128, 0.15)' : selectedContract.status === 'expired' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                border: selectedContract.status === 'active' ? '1px solid rgba(74, 222, 128, 0.4)' : selectedContract.status === 'expired' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(251, 191, 36, 0.4)',
                 borderRadius: '10px',
                 fontSize: '12px',
                 fontWeight: '700',
-                color: selectedContract.status === 'Activo' ? '#4ade80' : '#fbbf24',
+                color: selectedContract.status === 'active' ? '#4ade80' : selectedContract.status === 'expired' ? '#ef4444' : '#fbbf24',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px'
               }}>
-                {selectedContract.status === 'Activo' ? <CheckCircle size={14} /> : <Clock size={14} />}
-                {selectedContract.status}
+                {selectedContract.status === 'active' ? <CheckCircle size={14} /> : <Clock size={14} />}
+                {selectedContract.status === 'active' ? 'Activo' : selectedContract.status === 'expired' ? 'Expirado' : 'Pendiente'}
               </div>
             </div>
 
@@ -2439,7 +2449,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   color: '#AFB3B7',
                   lineHeight: '1.7'
                 }}>
-                  {selectedContract.description}
+                  Este contrato de {selectedContract.contractType} establece los términos y condiciones para la distribución y comercialización de tu música con BIGARTIST ROYALTIES. El contrato es de tipo {selectedContract.isPhysical ? 'físico' : 'digital'} y garantiza un {selectedContract.royaltyPercentage}% de royalties sobre los ingresos generados.
                 </p>
               </div>
 
@@ -2469,7 +2479,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                     fontWeight: '700',
                     color: '#ffffff'
                   }}>
-                    {selectedContract.type}
+                    {selectedContract.contractType}
                   </div>
                 </div>
 
@@ -2517,7 +2527,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                     fontWeight: '700',
                     color: '#ffffff'
                   }}>
-                    {selectedContract.startDate}
+                    {new Date(selectedContract.startDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </div>
                 </div>
 
@@ -2541,7 +2551,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                     fontWeight: '700',
                     color: '#ffffff'
                   }}>
-                    {selectedContract.endDate}
+                    {new Date(selectedContract.endDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </div>
                 </div>
               </div>
