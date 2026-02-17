@@ -90,12 +90,36 @@ export function HomePage() {
     );
   }
 
-  // Calcular métricas - Debe coincidir con el Panel de Finanzas
-  const royaltyPercentage = 70; // 70% para artistas
-  const labelPercentage = 30;   // 30% para BAM
+  // Calcular métricas basadas en los contratos reales de cada artista
+  const contracts = JSON.parse(localStorage.getItem('contracts') || '[]');
+  const royaltiesData = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
+  
+  // Calcular el total de royalties por artista según su contrato
+  let totalArtista = 0;
+  let totalBAM = 0;
+  
+  royaltiesData.forEach((royalty: any) => {
+    // Buscar el contrato activo del artista
+    const artistContract = contracts.find((c: any) => 
+      c.artistName === royalty.artistName && c.status === 'active'
+    );
+    
+    // Si tiene contrato, usar su porcentaje; si no, usar 50% por defecto
+    const artistPercentage = artistContract?.royaltyPercentage || 50;
+    const artistShare = royalty.totalRevenue * (artistPercentage / 100);
+    const labelShare = royalty.totalRevenue * ((100 - artistPercentage) / 100);
+    
+    totalArtista += artistShare;
+    totalBAM += labelShare;
+  });
+  
   const totalRoyalties = stats.totalRevenue;
-  const totalArtista = totalRoyalties * (royaltyPercentage / 100);
-  const totalBAM = totalRoyalties * (labelPercentage / 100);
+  
+  // Calcular total facturado por otros trabajos
+  const totalWorkBilling = contracts.reduce((sum: number, contract: any) => {
+    const workBilling = parseFloat(contract.workBilling) || 0;
+    return sum + workBilling;
+  }, 0);
 
   // Stats cards - Las mismas 4 métricas que en el Portal del Artista y Panel de Finanzas
   const statsCards = [
@@ -113,7 +137,7 @@ export function HomePage() {
       icon: TrendingUp,
       color: '#4ade80',
       bgColor: 'rgba(74, 222, 128, 0.1)',
-      subtitle: `${royaltyPercentage}% para artistas`
+      subtitle: 'Según contratos individuales'
     },
     {
       title: 'Total BAM',
@@ -121,15 +145,15 @@ export function HomePage() {
       icon: Calendar,
       color: '#fb923c',
       bgColor: 'rgba(251, 146, 60, 0.1)',
-      subtitle: `${labelPercentage}% para el sello`
+      subtitle: 'Parte de la compañía'
     },
     {
-      title: 'Porcentaje Contrato',
-      value: `${royaltyPercentage}%`,
+      title: 'Otros Trabajos',
+      value: `${totalWorkBilling.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€`,
       icon: Users,
       color: '#8b5cf6',
       bgColor: 'rgba(139, 92, 246, 0.1)',
-      subtitle: 'Split de royalties'
+      subtitle: 'Facturación aparte'
     }
   ];
 

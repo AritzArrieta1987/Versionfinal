@@ -528,6 +528,20 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
                     <span>🏢 BIGARTIST (Compañía):</span>
                     <span>{(100 - parseFloat(formData.royaltyPercentage)).toFixed(2)}%</span>
                   </div>
+                  {formData.workBilling && (
+                    <div style={{
+                      marginTop: '10px',
+                      paddingTop: '10px',
+                      borderTop: '1px solid rgba(201, 165, 116, 0.2)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      color: '#c9a574',
+                      fontWeight: '600'
+                    }}>
+                      <span>💼 Facturación por Trabajos:</span>
+                      <span>{parseFloat(formData.workBilling).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

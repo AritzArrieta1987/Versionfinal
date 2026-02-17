@@ -256,6 +256,10 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
   // Calcular el porcentaje de royalty desde los contratos activos
   const activeContract = contracts.find(c => c.status === 'active');
   const royaltyPercentage = activeContract?.royaltyPercentage || data.royaltyPercentage || 50;
+  
+  // Calcular el monto que le corresponde al artista basado en el contrato
+  const artistRevenue = data.totalRevenue * (royaltyPercentage / 100);
+  const labelShare = data.totalRevenue * ((100 - royaltyPercentage) / 100);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -369,7 +373,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(data.artistRoyalty || (data.totalRevenue * (royaltyPercentage / 100)))}
+                  {formatEuro(artistRevenue)}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -425,7 +429,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(data.labelShare || (data.totalRevenue * ((100 - royaltyPercentage) / 100)))}
+                  {formatEuro(labelShare)}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -516,15 +520,241 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                 )}
               </div>
             </div>
+
+            {/* Contrato Activo - Resumen */}
+            <div style={{
+              marginBottom: isMobile ? '20px' : '32px'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
+                border: '1px solid rgba(201, 165, 116, 0.2)',
+                borderRadius: '16px',
+                padding: isMobile ? '20px' : '24px'
+              }}>
+                <h2 style={{
+                  fontSize: '18px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <FileSignature size={20} color="#c9a574" />
+                  Contrato Activo
+                </h2>
+                
+                {contracts.length > 0 ? (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                    gap: isMobile ? '16px' : '20px'
+                  }}>
+                    {/* Información del Contrato */}
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      borderRadius: '12px',
+                      padding: isMobile ? '16px' : '20px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '6px' }}>Tipo de Contrato</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{
+                            padding: '4px 12px',
+                            background: 'rgba(201, 165, 116, 0.15)',
+                            border: '1px solid rgba(201, 165, 116, 0.3)',
+                            borderRadius: '6px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#c9a574'
+                          }}>
+                            {contracts[0].contractType}
+                          </span>
+                          <span style={{
+                            padding: '4px 12px',
+                            background: contracts[0].status === 'active' 
+                              ? 'rgba(34, 197, 94, 0.15)' 
+                              : 'rgba(239, 68, 68, 0.15)',
+                            border: contracts[0].status === 'active'
+                              ? '1px solid rgba(34, 197, 94, 0.3)'
+                              : '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: contracts[0].status === 'active' ? '#22c55e' : '#ef4444'
+                          }}>
+                            {contracts[0].status === 'active' ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '6px' }}>Porcentaje de Royalties</p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                          <span style={{ fontSize: '32px', fontWeight: '700', color: '#c9a574' }}>
+                            {contracts[0].royaltyPercentage}%
+                          </span>
+                          <span style={{ fontSize: '14px', color: '#AFB3B7' }}>del total</span>
+                        </div>
+                      </div>
+
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '6px' }}>Facturación de Obra</p>
+                        <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff' }}>
+                          {contracts[0].workBilling || 'No especificado'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Fechas y Detalles */}
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      borderRadius: '12px',
+                      padding: isMobile ? '16px' : '20px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}>
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '6px' }}>Fecha de Inicio</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Calendar size={16} color="#c9a574" />
+                          <span style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff' }}>
+                            {new Date(contracts[0].startDate).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ marginBottom: '16px' }}>
+                        <p style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '6px' }}>Fecha de Finalización</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Calendar size={16} color="#c9a574" />
+                          <span style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff' }}>
+                            {new Date(contracts[0].endDate).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {contracts[0].totalRevenue !== undefined && (
+                        <div style={{
+                          background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
+                          borderRadius: '10px',
+                          padding: '12px 16px',
+                          border: '1px solid rgba(201, 165, 116, 0.3)'
+                        }}>
+                          <p style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '4px' }}>Ingresos Totales del Contrato</p>
+                          <p style={{ fontSize: '20px', fontWeight: '700', color: '#c9a574' }}>
+                            €{contracts[0].totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    height: '200px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <FileSignature size={48} color="#c9a574" style={{ opacity: 0.3 }} />
+                    <p style={{ fontSize: '14px', color: '#6b7280' }}>
+                      No hay contratos activos disponibles
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         );
       
       case 'Mi Catálogo':
         return (
           <div>
-            <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', marginBottom: isMobile ? '16px' : '24px', color: '#ffffff' }}>
+            <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', marginBottom: isMobile ? '12px' : '16px', color: '#ffffff' }}>
               Mi Catálogo
             </h1>
+            
+            {/* Caja informativa de porcentaje */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
+              border: '1px solid rgba(201, 165, 116, 0.3)',
+              borderRadius: '12px',
+              padding: isMobile ? '12px 16px' : '16px 20px',
+              marginBottom: isMobile ? '16px' : '24px',
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              justifyContent: 'space-between',
+              gap: isMobile ? '12px' : '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'rgba(201, 165, 116, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <FileSignature size={20} color="#c9a574" />
+                </div>
+                <div>
+                  <div style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: '700', color: '#ffffff', marginBottom: '4px' }}>
+                    Tu porcentaje de royalties
+                  </div>
+                  <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#AFB3B7' }}>
+                    Según tu contrato activo
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                display: 'flex',
+                gap: isMobile ? '12px' : '16px',
+                width: isMobile ? '100%' : 'auto'
+              }}>
+                <div style={{
+                  flex: isMobile ? 1 : 'none',
+                  padding: '10px 16px',
+                  background: 'rgba(74, 222, 128, 0.1)',
+                  border: '1px solid rgba(74, 222, 128, 0.3)',
+                  borderRadius: '8px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: '#4ade80', marginBottom: '4px' }}>
+                    Artista
+                  </div>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#4ade80' }}>
+                    {royaltyPercentage}%
+                  </div>
+                </div>
+                <div style={{
+                  flex: isMobile ? 1 : 'none',
+                  padding: '10px 16px',
+                  background: 'rgba(251, 146, 60, 0.1)',
+                  border: '1px solid rgba(251, 146, 60, 0.3)',
+                  borderRadius: '8px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: '600', color: '#fb923c', marginBottom: '4px' }}>
+                    Compañía
+                  </div>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: '#fb923c' }}>
+                    {100 - royaltyPercentage}%
+                  </div>
+                </div>
+              </div>
+            </div>
             
             {data.tracks.length === 0 ? (
               <div style={{
@@ -767,9 +997,26 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
             <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', marginBottom: '8px', color: '#ffffff' }}>
               Mis Royalties
             </h1>
-            <p style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7', marginBottom: isMobile ? '20px' : '32px' }}>
+            <p style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7', marginBottom: isMobile ? '12px' : '16px' }}>
               Gestiona tus pagos y solicita transferencias
             </p>
+            
+            {/* Nota informativa de porcentaje */}
+            <div style={{
+              background: 'rgba(74, 222, 128, 0.1)',
+              border: '1px solid rgba(74, 222, 128, 0.3)',
+              borderRadius: '10px',
+              padding: isMobile ? '10px 14px' : '12px 16px',
+              marginBottom: isMobile ? '20px' : '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <CheckCircle size={18} color="#4ade80" />
+              <div style={{ fontSize: isMobile ? '12px' : '13px', color: '#4ade80', fontWeight: '600' }}>
+                El balance mostrado es tu parte ({royaltyPercentage}%) según tu contrato activo
+              </div>
+            </div>
             
             {/* Grid: Tarjeta y Formulario */}
             <div style={{
@@ -885,7 +1132,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                       textShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
                       filter: 'drop-shadow(0 2px 4px rgba(255, 255, 255, 0.1))'
                     }}>
-                      {formatEuro(data.totalRevenue)}
+                      {formatEuro(artistRevenue)}
                     </div>
                   </div>
 

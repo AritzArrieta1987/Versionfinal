@@ -15,8 +15,26 @@ export function ContractsPage() {
     setContracts(savedContracts);
   }, []);
 
+  // Obtener ingresos del CSV para cada contrato
+  const getContractsWithRevenue = () => {
+    const royaltiesData = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
+    
+    return contracts.map((contract: any) => {
+      // Buscar los ingresos del artista en el CSV
+      const artistRoyalty = royaltiesData.find((r: any) => r.artistName === contract.artistName);
+      const totalRevenue = artistRoyalty?.totalRevenue || 0;
+      
+      return {
+        ...contract,
+        totalRevenue
+      };
+    });
+  };
+
+  const contractsWithRevenue = getContractsWithRevenue();
+
   // Filtrar contratos por búsqueda y estado
-  const filteredContracts = contracts.filter((contract) => {
+  const filteredContracts = contractsWithRevenue.filter((contract) => {
     const matchesSearch =
       contract.artistName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contract.contractType.toLowerCase().includes(searchTerm.toLowerCase());

@@ -33,12 +33,31 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Mock contracts data - En producción esto vendría del backend
-  const contracts = artists.map((artist, index) => ({
-    id: index + 1,
-    artistId: artist.id,
-    percentage: index === 0 ? 70 : 60,
-  }));
+  // Cargar contratos reales y royalties desde localStorage
+  const realContracts = JSON.parse(localStorage.getItem('contracts') || '[]');
+  const royaltiesData = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
+  
+  // Enriquecer artistas con sus ingresos del CSV
+  const artistsWithRevenue = artists.map((artist) => {
+    const artistRoyalty = royaltiesData.find((r: any) => r.artistName === artist.name);
+    return {
+      ...artist,
+      totalRevenue: artistRoyalty?.totalRevenue || 0
+    };
+  });
+  
+  // Mapear contratos a formato compatible con el código existente
+  const contracts = artistsWithRevenue.map((artist) => {
+    const artistContract = realContracts.find((c: any) => 
+      c.artistName === artist.name && c.status === 'active'
+    );
+    
+    return {
+      id: artist.id,
+      artistId: artist.id,
+      percentage: artistContract?.royaltyPercentage || 50,
+    };
+  });
 
   // Filtrar solicitudes pendientes
   const pendingRequests = paymentRequests.filter(req => req.status === 'pending');
@@ -284,7 +303,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 Beneficios de Bam
               </p>
               <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', color: '#c9a574', marginBottom: '4px', textShadow: '0 2px 4px rgba(0,0,0,0.3)', position: 'relative', zIndex: 2 }}>
-                €{artists.reduce((sum, artist) => {
+                €{artistsWithRevenue.reduce((sum, artist) => {
                   const contract = contracts.find(c => c.artistId === artist.id);
                   const bamPercentage = contract ? (100 - contract.percentage) / 100 : 0.30;
                   return sum + ((artist.totalRevenue || 0) * bamPercentage);
@@ -342,7 +361,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 Beneficio de Artistas
               </p>
               <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', color: 'rgba(201, 165, 116, 0.7)', marginBottom: '4px', position: 'relative', zIndex: 2 }}>
-                €{artists.reduce((sum, artist) => {
+                €{artistsWithRevenue.reduce((sum, artist) => {
                   const contract = contracts.find(c => c.artistId === artist.id);
                   const artistPercentage = contract ? contract.percentage / 100 : 0.70;
                   return sum + ((artist.totalRevenue || 0) * artistPercentage);
@@ -831,7 +850,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     lineHeight: '1',
                     marginTop: '2px'
                   }}>
-                    €{artists.reduce((sum, artist) => {
+                    €{artistsWithRevenue.reduce((sum, artist) => {
                       const contract = contracts.find(c => c.artistId === artist.id);
                       const bamPercentage = contract ? (100 - contract.percentage) / 100 : 0.30;
                       return sum + ((artist.totalRevenue || 0) * bamPercentage);
@@ -924,7 +943,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     lineHeight: '1',
                     marginTop: '2px'
                   }}>
-                    €{(artists.reduce((sum, artist) => {
+                    €{(artistsWithRevenue.reduce((sum, artist) => {
                       const contract = contracts.find(c => c.artistId === artist.id);
                       const bamPercentage = contract ? (100 - contract.percentage) / 100 : 0.30;
                       return sum + ((artist.totalRevenue || 0) * bamPercentage);
@@ -947,12 +966,12 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
 
         {/* Income Tab Content */}
         {financesTab === 'income' && (
-          <IncomeSection dashboardData={dashboardData} artists={artists} isMobile={isMobile} />
+          <IncomeSection dashboardData={dashboardData} artists={artistsWithRevenue} isMobile={isMobile} />
         )}
 
         {/* Expenses Tab Content */}
         {financesTab === 'expenses' && (
-          <ExpensesSection dashboardData={dashboardData} artists={artists} isMobile={isMobile} />
+          <ExpensesSection dashboardData={dashboardData} artists={artistsWithRevenue} isMobile={isMobile} />
         )}
 
         {/* Reports Tab Content */}

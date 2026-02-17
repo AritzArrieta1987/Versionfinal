@@ -8,16 +8,32 @@ interface IncomeSectionProps {
 
 export function IncomeSection({ dashboardData, artists, isMobile = false }: IncomeSectionProps) {
   const topArtists = artists
-    .map(artist => {
-      const monthlyData = dashboardData.monthlyData || [];
-      const artistRevenue = monthlyData.reduce((sum: number, month: any) => {
-        const artistData = month.artists?.find((a: any) => a.id === artist.id);
-        return sum + (artistData?.revenue || 0);
-      }, 0);
-      return { ...artist, revenue: artistRevenue };
-    })
+    .map(artist => ({
+      ...artist,
+      revenue: artist.totalRevenue || 0
+    }))
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
+
+  // Calcular totales reales por plataforma desde todos los artistas
+  const platformTotals = new Map<string, number>();
+  
+  artists.forEach(artist => {
+    if (artist.csvData && artist.csvData.platforms) {
+      artist.csvData.platforms.forEach((platform: any) => {
+        const current = platformTotals.get(platform.name) || 0;
+        platformTotals.set(platform.name, current + platform.revenue);
+      });
+    }
+  });
+
+  // Preparar array de plataformas ordenadas por revenue
+  const platformsArray = Array.from(platformTotals.entries())
+    .map(([name, revenue]) => ({ name, revenue }))
+    .sort((a, b) => b.revenue - a.revenue);
+
+  // Calcular el total general
+  const totalPlatformRevenue = platformsArray.reduce((sum, p) => sum + p.revenue, 0);
 
   return (
     <div>
@@ -28,53 +44,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
         gap: isMobile ? '12px' : '20px',
         marginBottom: isMobile ? '20px' : '32px'
       }}>
-        {/* Ingresos por Streaming */}
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
-          borderRadius: isMobile ? '12px' : '16px',
-          padding: isMobile ? '18px' : '24px',
-          border: '1px solid rgba(201, 165, 116, 0.3)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-            <div style={{
-              width: isMobile ? '40px' : '48px',
-              height: isMobile ? '40px' : '48px',
-              borderRadius: '12px',
-              background: 'rgba(201, 165, 116, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Music size={isMobile ? 20 : 24} color="#c9a574" />
-            </div>
-            <div>
-              <p style={{ 
-                fontSize: isMobile ? '12px' : '13px', 
-                color: 'rgba(255, 255, 255, 0.7)', 
-                margin: 0 
-              }}>
-                Streaming
-              </p>
-              <h3 style={{ 
-                fontSize: isMobile ? '20px' : '24px', 
-                fontWeight: '700', 
-                color: '#c9a574', 
-                margin: '4px 0 0 0' 
-              }}>
-                €{(dashboardData.totalRevenue * 0.85).toLocaleString()}
-              </h3>
-            </div>
-          </div>
-          <p style={{ 
-            fontSize: isMobile ? '12px' : '13px', 
-            color: 'rgba(255, 255, 255, 0.6)', 
-            margin: 0 
-          }}>
-            85% del total
-          </p>
-        </div>
-
-        {/* Ingresos por Ventas */}
+        {/* Ingresos Totales */}
         <div style={{
           background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
           borderRadius: isMobile ? '12px' : '16px',
@@ -99,7 +69,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
                 color: 'rgba(255, 255, 255, 0.7)', 
                 margin: 0 
               }}>
-                Ventas Digitales
+                Ingresos Totales
               </p>
               <h3 style={{ 
                 fontSize: isMobile ? '20px' : '24px', 
@@ -107,7 +77,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
                 color: '#c9a574', 
                 margin: '4px 0 0 0' 
               }}>
-                €{(dashboardData.totalRevenue * 0.15).toLocaleString()}
+                €{dashboardData.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h3>
             </div>
           </div>
@@ -116,7 +86,56 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
             color: 'rgba(255, 255, 255, 0.6)', 
             margin: 0 
           }}>
-            15% del total
+            Todas las plataformas
+          </p>
+        </div>
+
+        {/* Plataforma Principal */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
+          borderRadius: isMobile ? '12px' : '16px',
+          padding: isMobile ? '18px' : '24px',
+          border: '1px solid rgba(201, 165, 116, 0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+            <div style={{
+              width: isMobile ? '40px' : '48px',
+              height: isMobile ? '40px' : '48px',
+              borderRadius: '12px',
+              background: 'rgba(201, 165, 116, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Music size={isMobile ? 20 : 24} color="#c9a574" />
+            </div>
+            <div>
+              <p style={{ 
+                fontSize: isMobile ? '12px' : '13px', 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                margin: 0 
+              }}>
+                {platformsArray.length > 0 ? platformsArray[0].name : 'N/A'}
+              </p>
+              <h3 style={{ 
+                fontSize: isMobile ? '20px' : '24px', 
+                fontWeight: '700', 
+                color: '#c9a574', 
+                margin: '4px 0 0 0' 
+              }}>
+                €{platformsArray.length > 0 ? platformsArray[0].revenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
+              </h3>
+            </div>
+          </div>
+          <p style={{ 
+            fontSize: isMobile ? '12px' : '13px', 
+            color: 'rgba(255, 255, 255, 0.6)', 
+            margin: 0 
+          }}>
+            {platformsArray.length > 0 && totalPlatformRevenue > 0 
+              ? ((platformsArray[0].revenue / totalPlatformRevenue) * 100).toFixed(1) + '% del total'
+              : 'Plataforma principal'
+            }
           </p>
         </div>
 
@@ -298,7 +317,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
                     color: index === 0 ? '#c9a574' : '#ffffff', 
                     margin: 0 
                   }}>
-                    €{artist.revenue.toLocaleString()}
+                    €{artist.revenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p style={{ 
                     fontSize: isMobile ? '11px' : '12px', 
@@ -336,12 +355,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
           gap: isMobile ? '12px' : '16px'
         }}>
-          {[
-            { name: 'Spotify', percentage: 45, revenue: dashboardData.totalRevenue * 0.45, color: '#1DB954' },
-            { name: 'Apple Music', percentage: 25, revenue: dashboardData.totalRevenue * 0.25, color: '#FA2D48' },
-            { name: 'YouTube Music', percentage: 15, revenue: dashboardData.totalRevenue * 0.15, color: '#FF0000' },
-            { name: 'Otras', percentage: 15, revenue: dashboardData.totalRevenue * 0.15, color: '#c9a574' }
-          ].map(platform => (
+          {platformsArray.map(platform => (
             <div
               key={platform.name}
               style={{
@@ -362,9 +376,9 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
                 <span style={{ 
                   fontSize: isMobile ? '16px' : '18px', 
                   fontWeight: '700', 
-                  color: platform.color 
+                  color: '#c9a574' 
                 }}>
-                  {platform.percentage}%
+                  {totalPlatformRevenue > 0 ? ((platform.revenue / totalPlatformRevenue) * 100).toFixed(2) + '%' : '0%'}
                 </span>
               </div>
               <div style={{
@@ -376,9 +390,9 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
                 marginBottom: '8px'
               }}>
                 <div style={{
-                  width: `${platform.percentage}%`,
+                  width: totalPlatformRevenue > 0 ? ((platform.revenue / totalPlatformRevenue) * 100) + '%' : '0%',
                   height: '100%',
-                  background: platform.color,
+                  background: '#c9a574',
                   borderRadius: '4px',
                   transition: 'width 0.3s ease'
                 }} />
@@ -388,7 +402,7 @@ export function IncomeSection({ dashboardData, artists, isMobile = false }: Inco
                 color: 'rgba(255, 255, 255, 0.7)', 
                 margin: 0 
               }}>
-                €{platform.revenue.toLocaleString()}
+                €{platform.revenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           ))}
