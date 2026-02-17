@@ -34,19 +34,15 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
     e.preventDefault();
     setIsLoading(true);
     setDebugInfo('');
+    setError('');
 
     try {
-      console.log('🔐 Intentando login...');
-      console.log('📧 Email:', email);
-      console.log('🌐 Hostname:', window.location.hostname);
-      
       // MODO DESARROLLO: Si no podemos conectar al backend, usar credenciales locales
       const isDevelopment = window.location.hostname === 'localhost' || 
                            window.location.hostname.includes('figma') ||
                            window.location.hostname.includes('preview');
       
       if (isDevelopment) {
-        console.log('🔧 MODO DESARROLLO - Usando autenticación local');
         setDebugInfo('🔧 Modo desarrollo - Usando autenticación local');
         
         // Credenciales de desarrollo
@@ -61,7 +57,6 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
         );
         
         if (user) {
-          console.log('✅ Login válido (modo desarrollo):', user.type);
           setDebugInfo('✅ Login exitoso!');
           
           localStorage.setItem('authToken', 'dev-token-' + Date.now());
@@ -74,7 +69,7 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
           
           onLoginSuccess();
         } else {
-          throw new Error('Email o contraseña incorrectos. Usa admin@bigartist.es / admin123');
+          throw new Error('Usuario o contraseña incorrectos');
         }
         
         setIsLoading(false);
@@ -82,7 +77,6 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
       }
       
       // MODO PRODUCCIÓN: Conectar al backend real
-      console.log('🔗 MODO PRODUCCIÓN - Conectando a:', 'https://app.bigartist.es/api/auth/login');
       setDebugInfo('🔄 Conectando al servidor...');
       
       // Llamada al backend para validar credenciales
@@ -90,7 +84,6 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
 
       if (response.success) {
         // Login exitoso
-        console.log('✅ Login válido desde MySQL:', response.user.type);
         setDebugInfo('✅ Login exitoso!');
         
         // Guardar token y datos del usuario
@@ -105,12 +98,12 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
         onLoginSuccess();
       } else {
         // Credenciales incorrectas
-        throw new Error(response.message || 'Email o contraseña incorrectos');
+        throw new Error('Usuario o contraseña incorrectos');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al conectar con el servidor';
-      console.error('❌ Error en login:', errorMessage);
-      setDebugInfo('❌ ' + errorMessage);
+      setError(errorMessage);
+      setDebugInfo('');
     } finally {
       setIsLoading(false);
     }
