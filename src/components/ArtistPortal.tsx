@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, BarChart3, Music, FileText, DollarSign, LogOut, Disc, CheckCircle, AlertCircle, Info, X, TrendingUp, Calendar, Camera, Settings, Wallet, CreditCard, Globe, Clock, Download, Eye, FileSignature, Package } from 'lucide-react';
+import { Bell, BarChart3, Music, FileText, DollarSign, LogOut, Disc, CheckCircle, AlertCircle, Info, X, TrendingUp, Calendar, Camera, Settings, Wallet, CreditCard, Globe, Clock, Download, Eye, FileSignature, Package, Play, Pause } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
 import backgroundImage from 'figma:asset/0a2a9faa1b59d5fa1e388a2eec5b08498dd7a493.png';
@@ -37,6 +37,11 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
     artistData?.photo || 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1400&h=300&fit=crop'
   );
 
+  // Estados para el reproductor de audio
+  const [trackAudios, setTrackAudios] = useState<{ [key: string]: string }>({});
+  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
   // Estados para el formulario de pago
   const [paymentFormData, setPaymentFormData] = useState({
     firstName: '',
@@ -55,6 +60,12 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
     method: string;
     reference: string;
   }>>([]);
+
+  // Cargar audios desde localStorage
+  useEffect(() => {
+    const savedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
+    setTrackAudios(savedAudios);
+  }, []);
 
   // Auto-completar titular de cuenta cuando cambian nombre o apellidos
   useEffect(() => {
@@ -123,6 +134,36 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
       maximumFractionDigits: 2
     }) + '€';
   };
+
+  // Función para reproducir/pausar audio
+  const togglePlayAudio = (trackId: string) => {
+    if (playingTrackId === trackId) {
+      // Pausar
+      audioRef.current?.pause();
+      setPlayingTrackId(null);
+    } else {
+      // Reproducir
+      if (audioRef.current) {
+        audioRef.current.src = trackAudios[trackId];
+        audioRef.current.play();
+        setPlayingTrackId(trackId);
+      }
+    }
+  };
+
+  // Limpiar cuando termina el audio
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      const handleEnded = () => {
+        setPlayingTrackId(null);
+      };
+      audio.addEventListener('ended', handleEnded);
+      return () => {
+        audio.removeEventListener('ended', handleEnded);
+      };
+    }
+  }, []);
 
   // Cerrar notificaciones al hacer click fuera
   useEffect(() => {
@@ -491,89 +532,144 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                 padding: '24px'
               }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {data.tracks.map((track: any, index: number) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: isMobile ? '12px' : '16px',
-                        padding: isMobile ? '14px' : '20px',
-                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
-                        borderRadius: isMobile ? '10px' : '12px',
-                        border: '1px solid rgba(201, 165, 116, 0.15)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <div style={{
-                        width: isMobile ? '48px' : '56px',
-                        height: isMobile ? '48px' : '56px',
-                        borderRadius: isMobile ? '10px' : '12px',
-                        background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.25) 0%, rgba(201, 165, 116, 0.1) 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        border: '1px solid rgba(201, 165, 116, 0.2)',
-                        boxShadow: '0 4px 12px rgba(201, 165, 116, 0.1)'
-                      }}>
-                        <Disc size={isMobile ? 24 : 28} color="#c9a574" />
-                      </div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: isMobile ? '14px' : '16px',
-                          fontWeight: '600',
-                          color: '#ffffff',
-                          marginBottom: isMobile ? '4px' : '6px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {track.title}
-                        </div>
-                        
-                        {track.isrc && (
+                  {data.tracks.map((track: any, index: number) => {
+                    // Generar el mismo ID que en CatalogPage
+                    const trackName = track.title || track.name;
+                    const trackId = track.isrc || `${data.name}-${trackName}`;
+                    const hasAudio = trackAudios[trackId];
+                    const isPlaying = playingTrackId === trackId;
+                    
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: isMobile ? '12px' : '16px',
+                          padding: isMobile ? '14px' : '20px',
+                          background: isPlaying 
+                            ? 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)'
+                            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                          borderRadius: isMobile ? '10px' : '12px',
+                          border: isPlaying 
+                            ? '1px solid rgba(201, 165, 116, 0.4)'
+                            : '1px solid rgba(201, 165, 116, 0.15)',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        {/* Botón de play/pause o icono de disco */}
+                        {hasAudio ? (
+                          <button
+                            onClick={() => togglePlayAudio(trackId)}
+                            style={{
+                              width: isMobile ? '48px' : '56px',
+                              height: isMobile ? '48px' : '56px',
+                              borderRadius: isMobile ? '10px' : '12px',
+                              background: isPlaying
+                                ? 'linear-gradient(135deg, #c9a574 0%, #a68a5e 100%)'
+                                : 'linear-gradient(135deg, rgba(201, 165, 116, 0.25) 0%, rgba(201, 165, 116, 0.1) 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              border: '1px solid rgba(201, 165, 116, 0.3)',
+                              boxShadow: isPlaying 
+                                ? '0 4px 20px rgba(201, 165, 116, 0.4)'
+                                : '0 4px 12px rgba(201, 165, 116, 0.1)',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease'
+                            }}
+                          >
+                            {isPlaying ? (
+                              <Pause size={isMobile ? 20 : 24} color="#ffffff" fill="#ffffff" />
+                            ) : (
+                              <Play size={isMobile ? 20 : 24} color="#c9a574" />
+                            )}
+                          </button>
+                        ) : (
                           <div style={{
-                            display: 'inline-flex',
+                            width: isMobile ? '48px' : '56px',
+                            height: isMobile ? '48px' : '56px',
+                            borderRadius: isMobile ? '10px' : '12px',
+                            background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.25) 0%, rgba(201, 165, 116, 0.1) 100%)',
+                            display: 'flex',
                             alignItems: 'center',
-                            gap: isMobile ? '4px' : '6px',
-                            padding: isMobile ? '3px 8px' : '4px 10px',
-                            background: 'rgba(201, 165, 116, 0.1)',
+                            justifyContent: 'center',
+                            flexShrink: 0,
                             border: '1px solid rgba(201, 165, 116, 0.2)',
-                            borderRadius: '6px',
-                            fontSize: isMobile ? '10px' : '12px',
-                            fontWeight: '600',
-                            color: '#c9a574',
-                            fontFamily: 'monospace',
-                            letterSpacing: '0.5px'
+                            boxShadow: '0 4px 12px rgba(201, 165, 116, 0.1)'
                           }}>
-                            <Globe size={isMobile ? 10 : 12} />
-                            {track.isrc}
+                            <Disc size={isMobile ? 24 : 28} color="#c9a574" />
+                          </div>
+                        )}
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: isMobile ? '14px' : '16px',
+                            fontWeight: '600',
+                            color: '#ffffff',
+                            marginBottom: isMobile ? '4px' : '6px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {trackName}
+                          </div>
+                          
+                          {track.isrc && (
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: isMobile ? '4px' : '6px',
+                              padding: isMobile ? '3px 8px' : '4px 10px',
+                              background: 'rgba(201, 165, 116, 0.1)',
+                              border: '1px solid rgba(201, 165, 116, 0.2)',
+                              borderRadius: '6px',
+                              fontSize: isMobile ? '10px' : '12px',
+                              fontWeight: '600',
+                              color: '#c9a574',
+                              fontFamily: 'monospace',
+                              letterSpacing: '0.5px'
+                            }}>
+                              <Globe size={isMobile ? 10 : 12} />
+                              {track.isrc}
+                            </div>
+                          )}
+                        </div>
+
+                        {!isMobile && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '8px 16px',
+                            background: hasAudio 
+                              ? 'rgba(74, 222, 128, 0.1)'
+                              : 'rgba(201, 165, 116, 0.1)',
+                            border: hasAudio 
+                              ? '1px solid rgba(74, 222, 128, 0.3)'
+                              : '1px solid rgba(201, 165, 116, 0.3)',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: hasAudio ? '#4ade80' : '#c9a574'
+                          }}>
+                            {hasAudio ? (
+                              <>
+                                <Music size={14} />
+                                Audio
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle size={14} />
+                                Activo
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
-
-                      {!isMobile && (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '8px 16px',
-                          background: 'rgba(74, 222, 128, 0.1)',
-                          border: '1px solid rgba(74, 222, 128, 0.3)',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: '#4ade80'
-                        }}>
-                          <CheckCircle size={14} />
-                          Activo
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -2603,6 +2699,9 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
           </div>
         </div>
       )}
+
+      {/* Elemento de audio oculto para reproducción */}
+      <audio ref={audioRef} style={{ display: 'none' }} />
     </div>
   );
 }
