@@ -33,6 +33,23 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Establecer el año por defecto al año más reciente del CSV
+  useEffect(() => {
+    if (dashboardData.monthlyData && dashboardData.monthlyData.length > 0) {
+      const years = new Set<number>();
+      dashboardData.monthlyData.forEach((data: any) => {
+        const match = data.month.match(/^(\d{4})M/);
+        if (match) {
+          years.add(parseInt(match[1]));
+        }
+      });
+      if (years.size > 0) {
+        const maxYear = Math.max(...Array.from(years));
+        setReportYear(maxYear);
+      }
+    }
+  }, [dashboardData.monthlyData]);
+
   // Cargar contratos reales y royalties desde localStorage
   const realContracts = JSON.parse(localStorage.getItem('contracts') || '[]');
   const royaltiesData = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
@@ -61,6 +78,40 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
 
   // Filtrar solicitudes pendientes
   const pendingRequests = paymentRequests.filter(req => req.status === 'pending');
+
+  // Calcular totales reales para reportes
+  const totalArtistRevenue = artistsWithRevenue.reduce((sum, artist) => {
+    const contract = realContracts.find((c: any) => c.artistName === artist.name && c.status === 'active');
+    const percentage = contract?.royaltyPercentage || 70;
+    return sum + (artist.totalRevenue * (percentage / 100));
+  }, 0);
+
+  const totalLabelShare = artistsWithRevenue.reduce((sum, artist) => {
+    const contract = realContracts.find((c: any) => c.artistName === artist.name && c.status === 'active');
+    const percentage = contract?.royaltyPercentage || 70;
+    return sum + (artist.totalRevenue * ((100 - percentage) / 100));
+  }, 0);
+
+  // Cargar gastos reales
+  const expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+  const totalExpenses = expenses.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0);
+
+  // Extraer años disponibles desde los datos del CSV
+  const availableYears = new Set<number>();
+  if (dashboardData.monthlyData && dashboardData.monthlyData.length > 0) {
+    dashboardData.monthlyData.forEach((data: any) => {
+      // Parsear el formato "2017M01", "2018M06", etc.
+      const match = data.month.match(/^(\d{4})M/);
+      if (match) {
+        availableYears.add(parseInt(match[1]));
+      }
+    });
+  }
+  // Si no hay datos, agregar año actual
+  if (availableYears.size === 0) {
+    availableYears.add(new Date().getFullYear());
+  }
+  const sortedYears = Array.from(availableYears).sort((a, b) => b - a); // Descendente
 
   // Datos para gráfico lineal - Periodos reales del CSV
   const csvLineData = dashboardData.monthlyData.length > 0 
@@ -1065,9 +1116,9 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                         outline: 'none'
                       }}
                     >
-                      <option value={2026} style={{ background: '#2a3f3f' }}>2026</option>
-                      <option value={2025} style={{ background: '#2a3f3f' }}>2025</option>
-                      <option value={2024} style={{ background: '#2a3f3f' }}>2024</option>
+                      {sortedYears.map(year => (
+                        <option key={year} value={year} style={{ background: '#2a3f3f' }}>{year}</option>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -1156,27 +1207,13 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   color: '#c9a574',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  €{dashboardData.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                  €{dashboardData.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
+                  fontSize: isMobile ? '11px' : '12px',
+                  color: 'rgba(255, 255, 255, 0.5)'
                 }}>
-                  <ArrowUpRight size={isMobile ? 12 : 14} color="#4ade80" />
-                  <span style={{
-                    fontSize: isMobile ? '11px' : '12px',
-                    color: '#4ade80',
-                    fontWeight: '600'
-                  }}>
-                    +12.5%
-                  </span>
-                  <span style={{
-                    fontSize: isMobile ? '11px' : '12px',
-                    color: 'rgba(255, 255, 255, 0.5)'
-                  }}>
-                    vs período anterior
-                  </span>
+                  Total de ingresos generados
                 </div>
               </div>
 
@@ -1211,7 +1248,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                   }}>
-                    BAM (30%)
+                    BAM Share
                   </span>
                 </div>
                 <div style={{
@@ -1220,7 +1257,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   color: '#ffffff',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  €{(dashboardData.totalRevenue * 0.3).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                  €{totalLabelShare.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -1261,7 +1298,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                   }}>
-                    Artistas (70%)
+                    Artistas Share
                   </span>
                 </div>
                 <div style={{
@@ -1270,7 +1307,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   color: '#ffffff',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  €{(dashboardData.totalRevenue * 0.7).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                  €{totalArtistRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -1320,7 +1357,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                   color: '#ef4444',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  €{(dashboardData.totalRevenue * 0.15).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                  €{totalExpenses.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',

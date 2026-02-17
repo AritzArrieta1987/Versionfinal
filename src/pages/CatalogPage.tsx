@@ -279,7 +279,7 @@ export function CatalogPage() {
           padding: '20px'
         }}>
           <p style={{ fontSize: '13px', color: '#AFB3B7', marginBottom: '8px' }}>Total Artistas</p>
-          <p style={{ fontSize: '24px', fontWeight: '700', color: '#c9a574' }}>{artists.length - 1}</p>
+          <p style={{ fontSize: '24px', fontWeight: '700', color: '#c9a574' }}>{Math.max(0, artists.length - 1)}</p>
         </div>
         <div style={{
           background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.6) 0%, rgba(30, 47, 47, 0.8) 100%)',
