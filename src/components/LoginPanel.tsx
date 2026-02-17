@@ -27,21 +27,62 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setIsLoading(true);
     setDebugInfo('');
-    setLoading(true);
 
     try {
-      console.log('🔐 Iniciando login...');
+      console.log('🔐 Intentando login...');
       console.log('📧 Email:', email);
       console.log('🌐 Hostname:', window.location.hostname);
-      console.log('🔗 API URL:', 'https://app.bigartist.es/api/auth/login');
       
+      // MODO DESARROLLO: Si no podemos conectar al backend, usar credenciales locales
+      const isDevelopment = window.location.hostname === 'localhost' || 
+                           window.location.hostname.includes('figma') ||
+                           window.location.hostname.includes('preview');
+      
+      if (isDevelopment) {
+        console.log('🔧 MODO DESARROLLO - Usando autenticación local');
+        setDebugInfo('🔧 Modo desarrollo - Usando autenticación local');
+        
+        // Credenciales de desarrollo
+        const devCredentials = {
+          admin: { email: 'admin@bigartist.es', password: 'admin123', name: 'Admin BigArtist', type: 'admin' },
+          artist: { email: 'artist@bigartist.es', password: 'artist123', name: 'Demo Artist', type: 'artist' }
+        };
+        
+        // Validar credenciales
+        const user = Object.values(devCredentials).find(
+          cred => cred.email === email && cred.password === password
+        );
+        
+        if (user) {
+          console.log('✅ Login válido (modo desarrollo):', user.type);
+          setDebugInfo('✅ Login exitoso!');
+          
+          localStorage.setItem('authToken', 'dev-token-' + Date.now());
+          localStorage.setItem('user', JSON.stringify({
+            id: user.type === 'admin' ? 1 : 2,
+            email: user.email,
+            name: user.name,
+            type: user.type
+          }));
+          
+          onLoginSuccess();
+        } else {
+          throw new Error('Email o contraseña incorrectos. Usa admin@bigartist.es / admin123');
+        }
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // MODO PRODUCCIÓN: Conectar al backend real
+      console.log('🔗 MODO PRODUCCIÓN - Conectando a:', 'https://app.bigartist.es/api/auth/login');
       setDebugInfo('🔄 Conectando al servidor...');
       
       // Llamada al backend para validar credenciales
@@ -69,42 +110,10 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al conectar con el servidor';
       console.error('❌ Error en login:', errorMessage);
-      
-      // Mostrar información más detallada
-      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('no se puede conectar')) {
-        setError('❌ No se puede conectar al servidor backend');
-        setDebugInfo(
-          '🔧 El backend no está accesible. Posibles causas:\n' +
-          '• El backend no está corriendo en el servidor\n' +
-          '• Problema de CORS o red\n\n' +
-          '💡 Solución: Ejecuta en tu terminal:\n' +
-          'cd backend && ./deploy-to-server.sh'
-        );
-      } else {
-        setError(errorMessage);
-        setDebugInfo('');
-      }
+      setDebugInfo('❌ ' + errorMessage);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
-
-  // Modo DEMO para testing sin backend
-  const handleDemoMode = () => {
-    console.log('🎭 Modo DEMO activado');
-    
-    // Simular usuario admin
-    const demoUser = {
-      id: 1,
-      email: 'admin@bigartist.es',
-      name: 'Admin',
-      type: 'admin'
-    };
-    
-    localStorage.setItem('authToken', 'demo-token-' + Date.now());
-    localStorage.setItem('user', JSON.stringify(demoUser));
-    
-    onLoginSuccess();
   };
 
   return (
@@ -363,38 +372,38 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
             {/* Botón de login */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               style={{
                 width: '100%',
                 padding: '16px',
                 fontSize: '15px',
                 fontWeight: '600',
                 color: '#0D1F23',
-                background: loading ? 'rgba(201, 165, 116, 0.5)' : 'linear-gradient(135deg, #c9a574 0%, #d4b589 100%)',
+                background: isLoading ? 'rgba(201, 165, 116, 0.5)' : 'linear-gradient(135deg, #c9a574 0%, #d4b589 100%)',
                 border: 'none',
                 borderRadius: '10px',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 letterSpacing: '1px',
                 textTransform: 'uppercase',
                 transition: 'all 0.3s ease',
                 boxShadow: '0 4px 12px rgba(201, 165, 116, 0.3)',
                 marginBottom: '16px',
-                opacity: loading ? 0.6 : 1
+                opacity: isLoading ? 0.6 : 1
               }}
               onMouseEnter={(e) => {
-                if (!loading) {
+                if (!isLoading) {
                   e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.boxShadow = '0 6px 20px rgba(201, 165, 116, 0.5)';
                 }
               }}
               onMouseLeave={(e) => {
-                if (!loading) {
+                if (!isLoading) {
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.3)';
                 }
               }}
             >
-              {loading ? 'Iniciando...' : 'Iniciar Sesión'}
+              {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
             </button>
 
             {/* Debug Info */}
@@ -414,37 +423,6 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
               }}>
                 {debugInfo}
               </div>
-            )}
-
-            {/* Botón de Modo Demo */}
-            {error && (
-              <button
-                type="button"
-                onClick={handleDemoMode}
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#93c5fd',
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  border: '2px solid rgba(59, 130, 246, 0.3)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  marginBottom: '20px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
-                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                }}
-              >
-                🎭 Modo Demo (Ver Dashboard sin Backend)
-              </button>
             )}
           </form>
 

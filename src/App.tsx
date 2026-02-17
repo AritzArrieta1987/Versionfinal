@@ -20,8 +20,7 @@ export default function App() {
   const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
-    // Limpiar datos de prueba del localStorage
-    localStorage.removeItem('uploadedCSVs');
+    // No limpiar uploadedCSVs - queremos que persistan los datos del CSV
     
     const token = localStorage.getItem('authToken');
     const userStr = localStorage.getItem('user');
@@ -113,21 +112,67 @@ export default function App() {
   // Si es artista, mostrar el portal de artista
   if (userType === 'artista') {
     console.log('✅ Redirigiendo a Portal de Artista');
+    
+    // Cargar datos del artista desde localStorage (datos del CSV)
+    const artists = JSON.parse(localStorage.getItem('artists') || '[]');
+    const royaltiesData = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
+    
+    // Buscar el artista por email o nombre
+    const artist = artists.find(a => 
+      a.email === userData?.email || 
+      a.name === userData?.name
+    );
+    
+    let artistData = {
+      id: userData?.id || 0,
+      name: userData?.name || 'Artista',
+      email: userData?.email || '',
+      totalRevenue: 0,
+      totalStreams: 0,
+      tracks: [],
+      monthlyData: [],
+      platformBreakdown: {}
+    };
+    
+    if (artist && artist.csvData) {
+      // Encontrar datos de royalties del artista
+      const artistRoyalties = royaltiesData.find(r => r.artistName === artist.name);
+      
+      // Preparar monthlyData desde los períodos del CSV
+      const monthlyData = artist.csvData.periods.map(period => ({
+        month: period.period,
+        revenue: period.revenue,
+        streams: 0
+      }));
+      
+      // Preparar platformBreakdown
+      const platformBreakdown = {};
+      artist.csvData.platforms.forEach(platform => {
+        platformBreakdown[platform.name] = platform.revenue;
+      });
+      
+      artistData = {
+        id: artist.id,
+        name: artist.name,
+        email: artist.email,
+        photo: artist.photo || '',
+        totalRevenue: artist.totalRevenue,
+        totalStreams: artist.totalStreams,
+        tracks: artist.csvData.tracks,
+        monthlyData: monthlyData,
+        platformBreakdown: platformBreakdown,
+        royaltyPercentage: artistRoyalties?.royaltyPercentage || 50,
+        artistRoyalty: artistRoyalties?.artistRoyalty || 0,
+        labelShare: artistRoyalties?.labelShare || 0
+      };
+    }
+    
     return (
       <>
         <Toaster />
         <ArtistPortal 
           onLogout={handleLogout}
-          artistData={{
-            id: userData?.id || 0,
-            name: userData?.name || 'Artista',
-            email: userData?.email || '',
-            totalRevenue: 0,
-            totalStreams: 0,
-            tracks: [],
-            monthlyData: [],
-            platformBreakdown: {}
-          }}
+          artistData={artistData}
         />
       </>
     );

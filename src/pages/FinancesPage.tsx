@@ -20,42 +20,76 @@ export function FinancesPage() {
 
   const loadFinanceData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      // Primero intentar cargar desde localStorage (datos del CSV)
+      const dashboardStats = localStorage.getItem('dashboardStats');
+      const localArtists = JSON.parse(localStorage.getItem('artists') || '[]');
+      const royaltiesData = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
       
-      // Cargar resumen financiero desde el backend
-      const overviewRes = await fetch('https://app.bigartist.es/api/finances/overview', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (overviewRes.ok) {
-        const data = await overviewRes.json();
+      if (dashboardStats) {
+        const stats = JSON.parse(dashboardStats);
+        
+        // Preparar monthlyData desde los períodos del CSV
+        const monthlyData = stats.periods.map(period => ({
+          month: period.period,
+          revenue: period.revenue,
+          streams: 0, // Se puede calcular si es necesario
+          artists: royaltiesData.map(artist => ({
+            id: artist.artistName,
+            name: artist.artistName,
+            revenue: artist.periods.find(p => p.period === period.period)?.revenue || 0
+          }))
+        }));
+        
         setDashboardData({
-          totalRevenue: data.data.totalRevenue || 0,
-          totalArtists: data.data.totalArtists || 0,
-          totalSongs: data.data.totalSongs || 0,
-          totalStreams: data.data.totalStreams || 0,
-          monthlyData: data.data.monthlyData || []
+          totalRevenue: stats.totalRevenue,
+          totalArtists: stats.totalArtists,
+          totalSongs: stats.totalTracks,
+          totalStreams: stats.totalStreams,
+          monthlyData: monthlyData
         });
-      }
+        
+        setArtists(localArtists);
+      } else {
+        // Si no hay datos del CSV, intentar cargar del backend
+        const token = localStorage.getItem('token');
+        
+        if (token) {
+          // Cargar resumen financiero desde el backend
+          const overviewRes = await fetch('https://app.bigartist.es/api/finances/overview', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (overviewRes.ok) {
+            const data = await overviewRes.json();
+            setDashboardData({
+              totalRevenue: data.data.totalRevenue || 0,
+              totalArtists: data.data.totalArtists || 0,
+              totalSongs: data.data.totalSongs || 0,
+              totalStreams: data.data.totalStreams || 0,
+              monthlyData: data.data.monthlyData || []
+            });
+          }
 
-      // Cargar artistas desde el backend
-      const artistsRes = await fetch('https://app.bigartist.es/api/artists', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (artistsRes.ok) {
-        const artistsData = await artistsRes.json();
-        setArtists(artistsData.artists || []);
-      }
+          // Cargar artistas desde el backend
+          const artistsRes = await fetch('https://app.bigartist.es/api/artists', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (artistsRes.ok) {
+            const artistsData = await artistsRes.json();
+            setArtists(artistsData.artists || []);
+          }
 
-      // Cargar solicitudes de pago desde el backend
-      const paymentsRes = await fetch('https://app.bigartist.es/api/payments/requests', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (paymentsRes.ok) {
-        const paymentsData = await paymentsRes.json();
-        setPaymentRequests(paymentsData.requests || []);
+          // Cargar solicitudes de pago desde el backend
+          const paymentsRes = await fetch('https://app.bigartist.es/api/payments/requests', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (paymentsRes.ok) {
+            const paymentsData = await paymentsRes.json();
+            setPaymentRequests(paymentsData.requests || []);
+          }
+        }
       }
 
     } catch (error) {

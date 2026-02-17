@@ -15,20 +15,70 @@ export function ArtistPortalPage() {
       // Simular llamada a la API
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // En producción, aquí se haría la llamada a la API
-      // const response = await fetch(`/api/artists/${artistId}`);
-      // const data = await response.json();
-      // setArtistData(data);
+      // Cargar datos del artista desde localStorage (datos del CSV)
+      const artists = JSON.parse(localStorage.getItem('artists') || '[]');
+      const royaltiesData = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
+      
+      // Buscar el artista por ID o nombre
+      const artist = artists.find(a => a.id.toString() === artistId || a.name === artistId);
+      
+      if (artist && artist.csvData) {
+        // Encontrar datos de royalties del artista
+        const artistRoyalties = royaltiesData.find(r => r.artistName === artist.name);
+        
+        // Preparar monthlyData desde los períodos del CSV
+        const monthlyData = artist.csvData.periods.map(period => ({
+          month: period.period,
+          revenue: period.revenue,
+          streams: 0 // Se puede calcular sumando streams de todas las canciones en ese período
+        }));
+        
+        // Preparar platformBreakdown
+        const platformBreakdown = {};
+        artist.csvData.platforms.forEach(platform => {
+          platformBreakdown[platform.name] = platform.revenue;
+        });
+        
+        // Construir datos del artista para el portal
+        setArtistData({
+          id: artist.id,
+          name: artist.name,
+          email: artist.email,
+          photo: artist.photo || '',
+          totalRevenue: artist.totalRevenue,
+          totalStreams: artist.totalStreams,
+          tracks: artist.csvData.tracks,
+          monthlyData: monthlyData,
+          platformBreakdown: platformBreakdown,
+          royaltyPercentage: artistRoyalties?.royaltyPercentage || 50,
+          artistRoyalty: artistRoyalties?.artistRoyalty || 0,
+          labelShare: artistRoyalties?.labelShare || 0,
+          territories: artist.csvData.territories,
+          contractType: artist.contractType,
+          contractPercentage: artist.contractPercentage
+        });
+      } else {
+        // Si no hay datos del CSV, cargar desde el backend (si existe)
+        // En producción, aquí se haría la llamada a la API
+        // const response = await fetch(`/api/artists/${artistId}`);
+        // const data = await response.json();
+        // setArtistData(data);
+        
+        // Si no hay datos en absoluto, mostrar mensaje o volver a la página principal
+        if (!artist) {
+          console.log('No se encontró el artista:', artistId);
+          // navigate('/');
+        }
+      }
       
       setIsLoading(false);
-      
-      // Si no hay datos del artista, mostrar mensaje
-      if (!artistId) {
-        navigate('/');
-      }
     };
 
-    fetchArtistData();
+    if (artistId) {
+      fetchArtistData();
+    } else {
+      navigate('/');
+    }
   }, [artistId, navigate]);
 
   const handleLogout = () => {

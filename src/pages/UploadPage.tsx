@@ -58,7 +58,25 @@ export function UploadPage() {
   };
 
   const parseCSV = (text: string) => {
+    console.log('🔍 PARSEANDO CSV...');
+    console.log('📄 Primeros 500 caracteres:', text.substring(0, 500));
+    
+    // Detectar el separador (puede ser coma, tabulación o punto y coma)
+    const firstLine = text.split('\n')[0];
+    let separator = ',';
+    if (firstLine.includes('\t')) {
+      separator = '\t';
+      console.log('✅ Separador detectado: TABULACIÓN');
+    } else if (firstLine.includes(';')) {
+      separator = ';';
+      console.log('✅ Separador detectado: PUNTO Y COMA');
+    } else {
+      console.log('✅ Separador detectado: COMA');
+    }
+    
     const lines = text.split('\n').filter(line => line.trim() !== '');
+    console.log('📊 Total de líneas:', lines.length);
+    
     if (lines.length === 0) {
       setErrorMessage('El archivo CSV está vacío');
       setUploadStatus('error');
@@ -67,20 +85,48 @@ export function UploadPage() {
 
     // Obtener headers
     const headerLine = lines[0];
-    const parsedHeaders = headerLine.split(',').map(h => h.trim());
+    const parsedHeaders = headerLine.split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
+    console.log('📋 Headers encontrados:', parsedHeaders);
     setHeaders(parsedHeaders);
 
     // Parsear datos
     const data: CSVRow[] = [];
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
+      const line = lines[i];
+      if (!line.trim()) continue; // Saltar líneas vacías
+      
+      const values: string[] = [];
+      let currentValue = '';
+      let insideQuotes = false;
+
+      // Parser avanzado para manejar campos con comas dentro de comillas
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        
+        if (char === '"') {
+          insideQuotes = !insideQuotes;
+        } else if (char === separator && !insideQuotes) {
+          values.push(currentValue.trim().replace(/^"|"$/g, ''));
+          currentValue = '';
+        } else {
+          currentValue += char;
+        }
+      }
+      values.push(currentValue.trim().replace(/^"|"$/g, '')); // Último valor
+
       const row: CSVRow = {};
       parsedHeaders.forEach((header, index) => {
         row[header] = values[index] || '';
       });
       data.push(row);
+      
+      // Log de las primeras 2 filas
+      if (i <= 2) {
+        console.log(`🔍 Fila ${i}:`, row);
+      }
     }
 
+    console.log('✅ CSV Parseado:', data.length, 'filas de datos');
     setCsvData(data);
   };
 
@@ -91,6 +137,17 @@ export function UploadPage() {
 
     // Simular procesamiento (en producción, aquí harías la llamada a la API)
     setTimeout(() => {
+      // 🗑️ LIMPIAR TODOS LOS DATOS ANTERIORES
+      console.log('🗑️ Limpiando datos anteriores...');
+      localStorage.removeItem('uploadedCSVs');
+      localStorage.removeItem('dashboardStats');
+      localStorage.removeItem('royaltiesData');
+      localStorage.removeItem('artists');
+      console.log('✅ Datos anteriores eliminados');
+      
+      // Procesar datos de The Orchard
+      const processedData = processTheOrchardData(csvData);
+      
       // Guardar el CSV procesado en localStorage
       const uploadedFile = {
         id: Date.now(),
@@ -100,36 +157,335 @@ export function UploadPage() {
         rowCount: csvData.length,
         headers: headers,
         data: csvData,
+        processedData: processedData,
         status: 'processed'
       };
 
-      // Obtener archivos existentes
-      const existingFiles = JSON.parse(localStorage.getItem('uploadedCSVs') || '[]');
-      existingFiles.unshift(uploadedFile); // Agregar al inicio
-      localStorage.setItem('uploadedCSVs', JSON.stringify(existingFiles));
+      // Guardar como nuevo (array limpio)
+      localStorage.setItem('uploadedCSVs', JSON.stringify([uploadedFile]));
+
+      // Guardar estadísticas procesadas para el dashboard
+      localStorage.setItem('dashboardStats', JSON.stringify(processedData.stats));
+      localStorage.setItem('royaltiesData', JSON.stringify(processedData.royalties));
+
+      // ✅ CREAR ARTISTAS DESDE CERO CON DATOS DEL CSV
+      const newArtists = [];
+      
+      processedData.artists.forEach((csvArtist, index) => {
+        const artistData = {
+          id: index + 1,
+          name: csvArtist.name, // ✅ Nombre real del CSV
+          email: `${csvArtist.name.toLowerCase().replace(/\s+/g, '.')}@artist.com`,
+          phone: '+34 600 000 000',
+          photo: '',
+          contractType: '360',
+          contractPercentage: 50,
+          status: 'active',
+          joinDate: new Date().toISOString(),
+          // ✅ DATOS REALES DEL CSV
+          totalRevenue: csvArtist.totalRevenue,
+          totalStreams: csvArtist.totalStreams,
+          csvData: csvArtist // Todos los datos del CSV
+        };
+        
+        newArtists.push(artistData);
+      });
+      
+      localStorage.setItem('artists', JSON.stringify(newArtists));
+      console.log('✅ Artistas creados desde CSV:', newArtists.length);
+      console.log('📊 Lista de artistas:', newArtists.map(a => a.name));
 
       setIsProcessing(false);
       setUploadStatus('success');
-      
-      // Aquí harías la llamada real a la API:
-      // try {
-      //   const formData = new FormData();
-      //   formData.append('file', file);
-      //   const response = await fetch('/api/upload-csv', {
-      //     method: 'POST',
-      //     body: formData,
-      //   });
-      //   if (response.ok) {
-      //     setUploadStatus('success');
-      //   } else {
-      //     setUploadStatus('error');
-      //     setErrorMessage('Error al procesar el archivo');
-      //   }
-      // } catch (error) {
-      //   setUploadStatus('error');
-      //   setErrorMessage('Error de conexión');
-      // }
     }, 2000);
+  };
+
+  const processTheOrchardData = (data: CSVRow[]) => {
+    console.log('🔍 PROCESANDO CSV - Primera fila para debug:', data[0]);
+    console.log('🔍 Columnas disponibles:', Object.keys(data[0]));
+    
+    // Función para parsear números europeos (con comas como decimales)
+    const parseEuropeanNumber = (value: string): number => {
+      if (!value || value.trim() === '') return 0;
+      
+      // Eliminar símbolos de moneda y espacios
+      let cleaned = value.replace(/[€$£\s]/g, '').trim();
+      
+      // Si tiene punto Y coma, asumir que punto es miles y coma es decimal (formato europeo)
+      if (cleaned.includes('.') && cleaned.includes(',')) {
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+      }
+      // Si solo tiene coma, asumir que es decimal europeo
+      else if (cleaned.includes(',') && !cleaned.includes('.')) {
+        cleaned = cleaned.replace(',', '.');
+      }
+      // Si solo tiene punto, ya está en formato correcto
+      
+      const parsed = parseFloat(cleaned);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+    
+    // Agrupar por artista
+    const artistsMap = new Map<string, any>();
+    const platformsMap = new Map<string, number>();
+    const territoriesMap = new Map<string, number>();
+    const periodsMap = new Map<string, number>();
+    
+    let totalRevenue = 0;
+    let totalStreams = 0;
+
+    // Función helper para buscar valores - MUY FLEXIBLE
+    const getValue = (row: CSVRow, possibleNames: string[]): string => {
+      // Crear mapa de columnas normalizadas
+      const columnMap = new Map<string, string>();
+      Object.keys(row).forEach(key => {
+        const normalized = key.toLowerCase().trim().replace(/\s+/g, ' ');
+        columnMap.set(normalized, key);
+      });
+      
+      // Buscar entre todos los nombres posibles
+      for (const name of possibleNames) {
+        const normalized = name.toLowerCase().trim().replace(/\s+/g, ' ');
+        const actualKey = columnMap.get(normalized);
+        if (actualKey && row[actualKey] !== undefined && row[actualKey] !== '') {
+          return String(row[actualKey]).trim();
+        }
+      }
+      
+      return '';
+    };
+
+    data.forEach((row, index) => {
+      // Usar nombres flexibles para las columnas
+      const artistName = getValue(row, [
+        'Artist Name', 'Artist', 'artist name', 'artist', 'ARTIST NAME', 'ARTIST',
+        'Nombre Artista', 'Artista'
+      ]);
+      
+      const trackName = getValue(row, [
+        'Track Name', 'Track', 'Song', 'track name', 'song', 'TRACK NAME', 'TRACK',
+        'Nombre Canción', 'Canción'
+      ]);
+      
+      const platform = getValue(row, [
+        'DMS', 'Platform', 'Store', 'dms', 'platform', 'store'
+      ]);
+      
+      const territory = getValue(row, [
+        'Territory', 'Country', 'territory', 'country', 'TERRITORY', 'COUNTRY',
+        'Territorio', 'País'
+      ]);
+      
+      const period = getValue(row, [
+        'Period', 'Activity Period', 'Date', 'period', 'activity period', 'date', 'PERIOD',
+        'Período', 'Periodo', 'Fecha'
+      ]);
+      
+      const quantityStr = getValue(row, [
+        'Quantity', 'Streams', 'Units', 'quantity', 'streams', 'units', 'QUANTITY',
+        'Cantidad', 'Reproducciones'
+      ]);
+      
+      const revenueStr = getValue(row, [
+        'Label Share Net Receipts', 'Revenue', 'Amount', 'Net Receipts', 
+        'label share net receipts', 'revenue', 'amount', 'net receipts',
+        'LABEL SHARE NET RECEIPTS', 'REVENUE', 'Ingresos', 'Importe'
+      ]);
+      
+      const releaseName = getValue(row, [
+        'Release Name', 'Album', 'Release', 'release name', 'album', 'RELEASE NAME', 'ALBUM',
+        'Nombre Release', 'Álbum'
+      ]);
+      
+      const isrc = getValue(row, [
+        'ISRC', 'isrc'
+      ]);
+      
+      const transType = getValue(row, [
+        'Trans Type', 'Transaction Type', 'Type', 'trans type', 'TRANS TYPE',
+        'Tipo Transacción', 'Tipo'
+      ]);
+      
+      const currency = getValue(row, [
+        'Preferred Currency', 'Currency', 'preferred currency', 'currency', 'CURRENCY',
+        'Moneda'
+      ]);
+
+      // Solo procesar si tenemos al menos artista
+      if (!artistName) {
+        if (index < 5) console.warn(`⚠️ Fila ${index} sin nombre de artista, ignorando...`);
+        return;
+      }
+
+      // PARSEAR NÚMEROS EN FORMATO EUROPEO
+      const quantity = parseEuropeanNumber(quantityStr);
+      const revenue = parseEuropeanNumber(revenueStr);
+
+      // Log para las primeras 3 filas
+      if (index < 3) {
+        console.log(`📊 Fila ${index}:`, {
+          artistName,
+          trackName,
+          platform,
+          territory,
+          period,
+          quantityStr,
+          quantity,
+          revenueStr,
+          revenue: revenue.toFixed(2)
+        });
+      }
+
+      // Acumular totales globales
+      totalRevenue += revenue;
+      totalStreams += quantity;
+
+      // Agrupar por plataforma
+      platformsMap.set(platform || 'Otras', (platformsMap.get(platform || 'Otras') || 0) + revenue);
+
+      // Agrupar por territorio
+      territoriesMap.set(territory || 'Otros', (territoriesMap.get(territory || 'Otros') || 0) + revenue);
+
+      // Agrupar por período
+      periodsMap.set(period || 'Sin Fecha', (periodsMap.get(period || 'Sin Fecha') || 0) + revenue);
+
+      // Agrupar por artista
+      if (!artistsMap.has(artistName)) {
+        artistsMap.set(artistName, {
+          name: artistName,
+          totalRevenue: 0,
+          totalStreams: 0,
+          tracks: new Map<string, any>(),
+          platforms: new Map<string, number>(),
+          territories: new Map<string, number>(),
+          periods: new Map<string, number>()
+        });
+      }
+
+      const artist = artistsMap.get(artistName);
+      artist.totalRevenue += revenue;
+      artist.totalStreams += quantity;
+
+      // Agrupar por track dentro del artista
+      const trackKey = trackName || 'Sin Título';
+      if (!artist.tracks.has(trackKey)) {
+        artist.tracks.set(trackKey, {
+          name: trackKey,
+          release: releaseName || 'Sin Release',
+          isrc: isrc || '',
+          revenue: 0,
+          streams: 0,
+          platforms: new Map<string, any>()
+        });
+      }
+
+      const track = artist.tracks.get(trackKey);
+      track.revenue += revenue;
+      track.streams += quantity;
+
+      // Datos por plataforma dentro del track
+      const platformKey = platform || 'Otras';
+      if (!track.platforms.has(platformKey)) {
+        track.platforms.set(platformKey, {
+          revenue: 0,
+          streams: 0,
+          details: []
+        });
+      }
+
+      const trackPlatform = track.platforms.get(platformKey);
+      trackPlatform.revenue += revenue;
+      trackPlatform.streams += quantity;
+      trackPlatform.details.push({
+        period: period || 'Sin Fecha',
+        territory: territory || 'Otros',
+        quantity,
+        revenue,
+        transType,
+        currency
+      });
+
+      // Plataformas del artista
+      artist.platforms.set(platformKey, (artist.platforms.get(platformKey) || 0) + revenue);
+      artist.territories.set(territory || 'Otros', (artist.territories.get(territory || 'Otros') || 0) + revenue);
+      artist.periods.set(period || 'Sin Fecha', (artist.periods.get(period || 'Sin Fecha') || 0) + revenue);
+    });
+
+    console.log('✅ PROCESAMIENTO COMPLETADO');
+    console.log('📊 Artistas encontrados:', Array.from(artistsMap.keys()));
+    console.log('💰 Total Revenue:', totalRevenue.toFixed(2), '€');
+    console.log('🎵 Total Streams:', totalStreams.toLocaleString('es-ES'));
+
+    // Convertir Maps a Arrays
+    const artists = Array.from(artistsMap.values()).map(artist => ({
+      ...artist,
+      tracks: Array.from(artist.tracks.values()).map(track => ({
+        ...track,
+        platforms: Array.from(track.platforms.entries()).map(([name, data]) => ({
+          name,
+          ...data
+        }))
+      })),
+      platforms: Array.from(artist.platforms.entries()).map(([name, revenue]) => ({
+        name,
+        revenue
+      })),
+      territories: Array.from(artist.territories.entries()).map(([name, revenue]) => ({
+        name,
+        revenue
+      })),
+      periods: Array.from(artist.periods.entries()).map(([period, revenue]) => ({
+        period,
+        revenue
+      }))
+    }));
+
+    const platforms = Array.from(platformsMap.entries())
+      .map(([name, revenue]) => ({ name, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    const territories = Array.from(territoriesMap.entries())
+      .map(([name, revenue]) => ({ name, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    const periods = Array.from(periodsMap.entries())
+      .map(([period, revenue]) => ({ period, revenue }))
+      .sort((a, b) => a.period.localeCompare(b.period));
+
+    // Calcular royalties por artista (asumiendo 50% por defecto)
+    const royalties = artists.map(artist => {
+      const royaltyPercentage = 0.50; // 50% por defecto
+      const artistRoyalty = artist.totalRevenue * royaltyPercentage;
+      const labelShare = artist.totalRevenue * (1 - royaltyPercentage);
+
+      return {
+        artistName: artist.name,
+        totalRevenue: artist.totalRevenue,
+        totalStreams: artist.totalStreams,
+        royaltyPercentage: royaltyPercentage * 100,
+        artistRoyalty: artistRoyalty,
+        labelShare: labelShare,
+        trackCount: artist.tracks.length,
+        topTrack: artist.tracks.sort((a, b) => b.revenue - a.revenue)[0],
+        platforms: artist.platforms,
+        periods: artist.periods
+      };
+    }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    return {
+      stats: {
+        totalRevenue,
+        totalStreams,
+        totalArtists: artists.length,
+        totalTracks: artists.reduce((sum, a) => sum + a.tracks.length, 0),
+        platforms,
+        territories,
+        periods,
+        topArtists: artists.sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 10)
+      },
+      royalties,
+      artists
+    };
   };
 
   const handleReset = () => {

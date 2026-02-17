@@ -1,5 +1,5 @@
 import { Users, Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArtistCard } from '../components/admin/ArtistCard';
 import { AddArtistModal } from '../components/admin/AddArtistModal';
 
@@ -8,6 +8,72 @@ export function ArtistsPage() {
   const [artists, setArtists] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Cargar artistas desde localStorage (del CSV procesado)
+  useEffect(() => {
+    loadArtistsFromCSV();
+  }, []);
+
+  const loadArtistsFromCSV = () => {
+    // Cargar artistas existentes
+    const existingArtists = JSON.parse(localStorage.getItem('artists') || '[]');
+    
+    // Cargar datos del CSV procesado
+    const uploadedCSVs = JSON.parse(localStorage.getItem('uploadedCSVs') || '[]');
+    
+    if (uploadedCSVs.length > 0 && uploadedCSVs[0].processedData) {
+      const processedData = uploadedCSVs[0].processedData;
+      const csvArtists = processedData.artists || [];
+      
+      // Crear o actualizar artistas desde el CSV
+      const artistsMap = new Map();
+      
+      // Agregar artistas existentes al mapa
+      existingArtists.forEach(artist => {
+        artistsMap.set(artist.name, artist);
+      });
+      
+      // Agregar/actualizar artistas del CSV
+      csvArtists.forEach(csvArtist => {
+        if (!artistsMap.has(csvArtist.name)) {
+          // Crear nuevo artista desde el CSV
+          const newArtist = {
+            id: Date.now() + Math.random(),
+            name: csvArtist.name,
+            email: `${csvArtist.name.toLowerCase().replace(/\s+/g, '.')}@artist.com`,
+            phone: '+34 600 000 000',
+            photo: '',
+            bio: `Artista con ${csvArtist.tracks.length} canciones en el catálogo`,
+            contractType: 'percentage',
+            contractPercentage: 50,
+            contractDetails: 'Contrato estándar - 50% royalties',
+            joinDate: new Date().toISOString().split('T')[0],
+            status: 'active',
+            totalRevenue: csvArtist.totalRevenue,
+            totalStreams: csvArtist.totalStreams,
+            trackCount: csvArtist.tracks.length,
+            csvData: csvArtist // Guardar datos completos del CSV
+          };
+          artistsMap.set(csvArtist.name, newArtist);
+        } else {
+          // Actualizar artista existente con datos del CSV
+          const existingArtist = artistsMap.get(csvArtist.name);
+          existingArtist.totalRevenue = csvArtist.totalRevenue;
+          existingArtist.totalStreams = csvArtist.totalStreams;
+          existingArtist.trackCount = csvArtist.tracks.length;
+          existingArtist.csvData = csvArtist;
+        }
+      });
+      
+      const updatedArtists = Array.from(artistsMap.values());
+      setArtists(updatedArtists);
+      
+      // Guardar artistas actualizados en localStorage
+      localStorage.setItem('artists', JSON.stringify(updatedArtists));
+    } else {
+      setArtists(existingArtists);
+    }
+  };
+
   // Filtrar artistas por búsqueda
   const filteredArtists = artists.filter(artist =>
     artist.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -15,7 +81,9 @@ export function ArtistsPage() {
   );
 
   const handleAddArtist = (newArtist: any) => {
-    setArtists([...artists, newArtist]);
+    const updatedArtists = [...artists, newArtist];
+    setArtists(updatedArtists);
+    localStorage.setItem('artists', JSON.stringify(updatedArtists));
     setShowAddModal(false);
   };
 
