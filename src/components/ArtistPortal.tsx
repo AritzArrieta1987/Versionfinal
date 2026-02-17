@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, BarChart3, Music, FileText, DollarSign, LogOut, Disc, CheckCircle, AlertCircle, Info, X, TrendingUp, Calendar, Camera, Settings, Wallet, CreditCard, Globe, Clock, Download, Eye, FileSignature } from 'lucide-react';
+import { Bell, BarChart3, Music, FileText, DollarSign, LogOut, Disc, CheckCircle, AlertCircle, Info, X, TrendingUp, Calendar, Camera, Settings, Wallet, CreditCard, Globe, Clock, Download, Eye, FileSignature, Package } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
 import backgroundImage from 'figma:asset/0a2a9faa1b59d5fa1e388a2eec5b08498dd7a493.png';
@@ -182,6 +182,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
   const tabs = [
     { name: 'Dashboard', icon: BarChart3 },
     { name: 'Mi Catálogo', icon: Music },
+    { name: 'Físico', icon: Package },
     { name: 'Royalties', icon: DollarSign },
     { name: 'Contratos', icon: FileText },
     { name: 'Configuración', icon: Settings }
@@ -576,6 +577,77 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                 </div>
               </div>
             )}
+          </div>
+        );
+      
+      case 'Físico':
+        return (
+          <div>
+            <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', marginBottom: '8px', color: '#ffffff' }}>
+              Ventas Físicas
+            </h1>
+            <p style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7', marginBottom: isMobile ? '20px' : '32px' }}>
+              Tus ventas de discos físicos y merchandising
+            </p>
+            
+            {/* En construcción */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
+              border: '1px solid rgba(201, 165, 116, 0.2)',
+              borderRadius: '20px',
+              padding: isMobile ? '48px 24px' : '80px 48px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '24px',
+            }}>
+              <div style={{
+                width: isMobile ? '80px' : '120px',
+                height: isMobile ? '80px' : '120px',
+                borderRadius: '50%',
+                background: 'rgba(201, 165, 116, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Package size={isMobile ? 40 : 60} color="#c9a574" />
+              </div>
+
+              <div>
+                <h2 style={{
+                  fontSize: isMobile ? '24px' : '32px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  marginBottom: '12px',
+                }}>
+                  En Construcción
+                </h2>
+                <p style={{
+                  fontSize: isMobile ? '14px' : '16px',
+                  color: '#AFB3B7',
+                  lineHeight: '1.6',
+                  maxWidth: '500px',
+                }}>
+                  Próximamente podrás consultar aquí tus ventas de discos físicos, vinilos, CDs y merchandising.
+                </p>
+              </div>
+
+              <div style={{
+                padding: '16px 24px',
+                background: 'rgba(201, 165, 116, 0.1)',
+                border: '1px solid rgba(201, 165, 116, 0.3)',
+                borderRadius: '12px',
+              }}>
+                <p style={{
+                  fontSize: '13px',
+                  color: '#c9a574',
+                  fontWeight: '600',
+                }}>
+                  🚧 Funcionalidad en desarrollo
+                </p>
+              </div>
+            </div>
           </div>
         );
       

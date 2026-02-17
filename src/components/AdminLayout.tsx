@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Music, Wallet, FileText, Upload, Bell, Zap, Menu, X, Home, LogOut, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Users, Music, Wallet, FileText, Upload, Bell, Zap, Menu, X, Home, LogOut, Trash2, Package } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
@@ -29,6 +29,7 @@ export default function AdminLayout({ onLogout }: AdminLayoutProps) {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Artistas', path: '/artists', icon: Users },
     { name: 'Catálogo', path: '/catalog', icon: Music },
+    { name: 'Físico', path: '/physical-sales', icon: Package },
     { name: 'Finanzas', path: '/finances', icon: Wallet },
     { name: 'Contratos', path: '/contracts', icon: FileText },
     { name: 'Subir CSV', path: '/upload', icon: Upload },
