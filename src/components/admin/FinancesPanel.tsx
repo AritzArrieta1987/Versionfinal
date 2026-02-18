@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Download, Filter, Calendar, Eye, FileText, Clock, ChevronDown, TrendingDown, Check, X } from 'lucide-react';
+import { Wallet, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Download, Filter, Calendar, Eye, FileText, Clock, ChevronDown, TrendingDown, Check, X, Package } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { IncomeSection } from './IncomeSection';
 import { ExpensesSection } from './ExpensesSection';
-import { toast } from '../utils/toast';
+import { PhysicalSalesSection } from './PhysicalSalesSection';
+import { toast } from 'sonner@2.0.3';
 
 interface FinancesPanelProps {
   dashboardData: any;
@@ -16,6 +17,21 @@ interface FinancesPanelProps {
 }
 
 export function FinancesPanel({ dashboardData, artists, paymentRequests = [], setPaymentRequests, notifications = [], setNotifications }: FinancesPanelProps) {
+  // Normalizar paymentRequests para asegurar que tienen los campos correctos
+  const normalizedPaymentRequests = paymentRequests.map((req: any) => ({
+    ...req,
+    artistName: req.artistName || req.artist_name || 'Artista',
+    artistPhoto: req.artistPhoto || req.artist_photo || null,
+    firstName: req.firstName || req.first_name || '',
+    lastName: req.lastName || req.last_name || '',
+    accountHolder: req.accountHolder || req.account_holder || '',
+    iban: req.iban || req.IBAN || '',
+    date: req.date || req.createdAt || new Date().toISOString(), // ✅ Normalizar fecha
+    status: req.status === 'Pendiente' ? 'pending' : req.status, // ✅ Normalizar status
+    artistId: req.artistId || req.artist_id || 0,
+    artistEmail: req.artistEmail || req.artist_email || ''
+  }));
+  
   const [financesTab, setFinancesTab] = useState('overview');
   const [reportPeriod, setReportPeriod] = useState('monthly'); // monthly, quarterly, yearly
   const [reportMonth, setReportMonth] = useState(new Date().getMonth());
@@ -77,7 +93,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
   });
 
   // Filtrar solicitudes pendientes
-  const pendingRequests = paymentRequests.filter(req => req.status === 'pending');
+  const pendingRequests = normalizedPaymentRequests.filter(req => req.status === 'pending');
 
   // Calcular totales reales para reportes
   const totalArtistRevenue = artistsWithRevenue.reduce((sum, artist) => {
@@ -148,6 +164,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
           { id: 'overview', label: 'Resumen General', icon: Wallet },
           { id: 'income', label: 'Ingresos', icon: ArrowUpRight },
           { id: 'expenses', label: 'Gastos', icon: ArrowDownRight },
+          { id: 'physical', label: 'Ventas Físico', icon: Package },
           { id: 'requests', label: 'Solicitudes', icon: DollarSign, badge: pendingRequests.length },
           { id: 'reports', label: 'Reportes', icon: FileText }
         ].map((tab) => {
@@ -590,10 +607,17 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               }}>
                 {pendingRequests.length > 0 ? (
                   pendingRequests.slice(0, 3).map((request: any) => {
-                    const requestDate = new Date(request.date);
-                    const now = new Date();
-                    const diffHours = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60));
-                    const timeAgo = diffHours < 24 ? `Hace ${diffHours}h` : `Hace ${Math.floor(diffHours / 24)}d`;
+                    let timeAgo = 'Hace un momento';
+                    try {
+                      const requestDate = new Date(request.date);
+                      if (!isNaN(requestDate.getTime())) {
+                        const now = new Date();
+                        const diffHours = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60));
+                        timeAgo = diffHours < 1 ? 'Hace un momento' : diffHours < 24 ? `Hace ${diffHours}h` : `Hace ${Math.floor(diffHours / 24)}d`;
+                      }
+                    } catch (error) {
+                      // Mantener el valor por defecto
+                    }
                     
                     return (
                       <div key={request.id} style={{
@@ -1025,6 +1049,11 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
           <ExpensesSection dashboardData={dashboardData} artists={artistsWithRevenue} isMobile={isMobile} />
         )}
 
+        {/* Physical Sales Tab Content */}
+        {financesTab === 'physical' && (
+          <PhysicalSalesSection artists={artistsWithRevenue} isMobile={isMobile} />
+        )}
+
         {/* Reports Tab Content */}
         {financesTab === 'reports' && (
           <div style={{ padding: '0' }}>
@@ -1384,33 +1413,63 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               }}>
                 Comparativa Ingresos vs Gastos
               </h3>
-              <div style={{ 
-                padding: isMobile ? '40px 16px' : '60px 24px', 
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: isMobile ? '200px' : '250px'
-              }}>
-                <TrendingUp size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, marginBottom: '16px' }} />
-                <h4 style={{
-                  fontSize: isMobile ? '16px' : '18px',
-                  fontWeight: '600',
-                  color: '#ffffff',
-                  marginBottom: '8px'
+              {dashboardData.totalRevenue > 0 || totalExpenses > 0 ? (
+                <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
+                  <BarChart data={[
+                    { 
+                      name: 'Financiero', 
+                      Ingresos: dashboardData.totalRevenue, 
+                      Gastos: totalExpenses,
+                      BAMShare: totalLabelShare,
+                      ArtistasShare: totalArtistRevenue
+                    }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+                    <XAxis dataKey="name" stroke="#AFB3B7" />
+                    <YAxis stroke="#AFB3B7" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'rgba(42, 63, 63, 0.95)', 
+                        border: '1px solid rgba(201, 165, 116, 0.3)',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value: any) => `€${value.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`}
+                    />
+                    <Bar dataKey="Ingresos" fill="#c9a574" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="BAMShare" fill="#8b7355" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="ArtistasShare" fill="#a68968" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="Gastos" fill="#ef4444" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ 
+                  padding: isMobile ? '40px 16px' : '60px 24px', 
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: isMobile ? '200px' : '250px'
                 }}>
-                  No hay datos disponibles
-                </h4>
-                <p style={{
-                  fontSize: isMobile ? '13px' : '14px',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  maxWidth: '400px',
-                  margin: '0 auto'
-                }}>
-                  La comparativa se mostrará cuando haya datos de ingresos y gastos registrados
-                </p>
-              </div>
+                  <TrendingUp size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, marginBottom: '16px' }} />
+                  <h4 style={{
+                    fontSize: isMobile ? '16px' : '18px',
+                    fontWeight: '600',
+                    color: '#ffffff',
+                    marginBottom: '8px'
+                  }}>
+                    No hay datos disponibles
+                  </h4>
+                  <p style={{
+                    fontSize: isMobile ? '13px' : '14px',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    maxWidth: '400px',
+                    margin: '0 auto'
+                  }}>
+                    La comparativa se mostrará cuando haya datos de ingresos y gastos registrados
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Lista de Reportes */}
@@ -1439,25 +1498,71 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     Reportes de Digital
                   </h3>
                 </div>
-                <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
-                  <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
-                  <h3 style={{
-                    fontSize: isMobile ? '16px' : '18px',
-                    fontWeight: '600',
-                    color: '#ffffff',
-                    marginBottom: '8px'
-                  }}>
-                    No hay reportes de digital
-                  </h3>
-                  <p style={{
-                    fontSize: isMobile ? '13px' : '14px',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    maxWidth: '300px',
-                    margin: '0 auto'
-                  }}>
-                    Los reportes de streaming y plataformas digitales aparecerán aquí
-                  </p>
-                </div>
+                {dashboardData.totalRevenue > 0 ? (
+                  <div style={{ padding: isMobile ? '16px' : '24px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '12px' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: isMobile ? '10px' : '12px',
+                        background: 'rgba(201, 165, 116, 0.1)',
+                        borderRadius: '8px'
+                      }}>
+                        <span style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7' }}>Total Streams</span>
+                        <span style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: '600', color: '#c9a574' }}>
+                          {dashboardData.totalStreams.toLocaleString('es-ES')}
+                        </span>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: isMobile ? '10px' : '12px',
+                        background: 'rgba(201, 165, 116, 0.1)',
+                        borderRadius: '8px'
+                      }}>
+                        <span style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7' }}>Ingresos Digitales</span>
+                        <span style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: '600', color: '#22c55e' }}>
+                          €{dashboardData.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: isMobile ? '10px' : '12px',
+                        background: 'rgba(201, 165, 116, 0.1)',
+                        borderRadius: '8px'
+                      }}>
+                        <span style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7' }}>Plataformas Activas</span>
+                        <span style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: '600', color: '#ffffff' }}>
+                          {Object.keys(dashboardData.platformRevenue || {}).length}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
+                    <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+                    <h3 style={{
+                      fontSize: isMobile ? '16px' : '18px',
+                      fontWeight: '600',
+                      color: '#ffffff',
+                      marginBottom: '8px'
+                    }}>
+                      No hay reportes de digital
+                    </h3>
+                    <p style={{
+                      fontSize: isMobile ? '13px' : '14px',
+                      color: 'rgba(255, 255, 255, 0.6)',
+                      maxWidth: '300px',
+                      margin: '0 auto'
+                    }}>
+                      Los reportes de streaming y plataformas digitales aparecerán aquí
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Ventas de Físico */}
@@ -1480,25 +1585,77 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                     Ventas de Físico
                   </h3>
                 </div>
-                <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
-                  <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
-                  <h3 style={{
-                    fontSize: isMobile ? '16px' : '18px',
-                    fontWeight: '600',
-                    color: '#ffffff',
-                    marginBottom: '8px'
-                  }}>
-                    No hay ventas de físico
-                  </h3>
-                  <p style={{
-                    fontSize: isMobile ? '13px' : '14px',
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    maxWidth: '300px',
-                    margin: '0 auto'
-                  }}>
-                    Las ventas de CDs, vinilos y merchandising aparecerán aquí
-                  </p>
-                </div>
+                {(() => {
+                  const physicalSales = JSON.parse(localStorage.getItem('physicalSales') || '[]');
+                  const totalPhysical = physicalSales.reduce((sum: number, sale: any) => sum + (sale.totalRevenue || 0), 0);
+                  const totalUnits = physicalSales.reduce((sum: number, sale: any) => sum + (sale.unitsSold || 0), 0);
+                  
+                  return totalPhysical > 0 ? (
+                    <div style={{ padding: isMobile ? '16px' : '24px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '12px' }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          padding: isMobile ? '10px' : '12px',
+                          background: 'rgba(201, 165, 116, 0.1)',
+                          borderRadius: '8px'
+                        }}>
+                          <span style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7' }}>Total Unidades</span>
+                          <span style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: '600', color: '#c9a574' }}>
+                            {totalUnits.toLocaleString('es-ES')}
+                          </span>
+                        </div>
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          padding: isMobile ? '10px' : '12px',
+                          background: 'rgba(201, 165, 116, 0.1)',
+                          borderRadius: '8px'
+                        }}>
+                          <span style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7' }}>Ingresos por Físico</span>
+                          <span style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: '600', color: '#22c55e' }}>
+                            €{totalPhysical.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          padding: isMobile ? '10px' : '12px',
+                          background: 'rgba(201, 165, 116, 0.1)',
+                          borderRadius: '8px'
+                        }}>
+                          <span style={{ fontSize: isMobile ? '13px' : '14px', color: '#AFB3B7' }}>Productos</span>
+                          <span style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: '600', color: '#ffffff' }}>
+                            {physicalSales.length}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: isMobile ? '40px 16px' : '60px 24px', textAlign: 'center' }}>
+                      <FileText size={isMobile ? 48 : 64} color="#c9a574" style={{ opacity: 0.3, margin: '0 auto 16px' }} />
+                      <h3 style={{
+                        fontSize: isMobile ? '16px' : '18px',
+                        fontWeight: '600',
+                        color: '#ffffff',
+                        marginBottom: '8px'
+                      }}>
+                        No hay ventas de físico
+                      </h3>
+                      <p style={{
+                        fontSize: isMobile ? '13px' : '14px',
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        maxWidth: '300px',
+                        margin: '0 auto'
+                      }}>
+                        Las ventas de CDs, vinilos y merchandising aparecerán aquí
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -1593,7 +1750,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
               flexDirection: 'column',
               gap: isMobile ? '12px' : '16px'
             }}>
-              {paymentRequests.length === 0 ? (
+              {normalizedPaymentRequests.length === 0 ? (
                 <div style={{
                   background: 'rgba(42, 63, 63, 0.3)',
                   borderRadius: isMobile ? '12px' : '16px',
@@ -1618,7 +1775,7 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                 </div>
               ) : (
                 <>
-                  {paymentRequests.map((request) => (
+                  {normalizedPaymentRequests.map((request) => (
                     <div
                       key={request.id}
                       style={{
@@ -1725,13 +1882,15 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                             <button
                               onClick={() => {
                                 if (setPaymentRequests) {
-                                  setPaymentRequests(
-                                    paymentRequests.map(r => 
-                                      r.id === request.id 
-                                        ? { ...r, status: 'completed' }
-                                        : r
-                                    )
+                                  const updatedRequests = normalizedPaymentRequests.map(r => 
+                                    r.id === request.id 
+                                      ? { ...r, status: 'completed' }
+                                      : r
                                   );
+                                  setPaymentRequests(updatedRequests);
+                                  
+                                  // Actualizar localStorage
+                                  localStorage.setItem('paymentRequests', JSON.stringify(updatedRequests));
                                   if (setNotifications) {
                                     setNotifications([{
                                       id: Date.now(),
@@ -1786,9 +1945,16 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                             <button
                               onClick={() => {
                                 if (setPaymentRequests && confirm('¿Estás seguro de rechazar esta solicitud?')) {
+                                  // ✅ Eliminar la solicitud
                                   setPaymentRequests(
                                     paymentRequests.filter(r => r.id !== request.id)
                                   );
+                                  
+                                  // ✅ Actualizar localStorage de solicitudes
+                                  const updatedRequests = paymentRequests.filter(r => r.id !== request.id);
+                                  localStorage.setItem('paymentRequests', JSON.stringify(updatedRequests));
+                                  
+                                  // ✅ Notificación para el admin
                                   if (setNotifications) {
                                     setNotifications([{
                                       id: Date.now(),
@@ -1799,6 +1965,34 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                                       read: false
                                     }]);
                                   }
+                                  
+                                  // ✅ Crear notificación para el artista
+                                  const artistNotificationKey = `artistNotifications_${request.artistId}`;
+                                  const existingArtistNotifications = JSON.parse(localStorage.getItem(artistNotificationKey) || '[]');
+                                  
+                                  const artistNotification = {
+                                    id: Date.now(),
+                                    type: 'error',
+                                    title: 'Solicitud de Pago Rechazada',
+                                    message: `Tu solicitud de pago de €${request.amount.toLocaleString('es-ES', { minimumFractionDigits: 2 })} ha sido rechazada. Por favor, ponte en contacto con el equipo de BIGARTIST ROYALTIES para más información.`,
+                                    time: 'Ahora',
+                                    date: new Date().toISOString(),
+                                    read: false
+                                  };
+                                  
+                                  existingArtistNotifications.unshift(artistNotification);
+                                  localStorage.setItem(artistNotificationKey, JSON.stringify(existingArtistNotifications));
+                                  
+                                  // ✅ Disparar evento para que el portal del artista se actualice
+                                  window.dispatchEvent(new CustomEvent('artistNotificationReceived', {
+                                    detail: { artistId: request.artistId }
+                                  }));
+                                  
+                                  // Mostrar toast de confirmación
+                                  toast.success('Solicitud Rechazada', {
+                                    description: `Se ha notificado a ${request.artistName} sobre el rechazo.`,
+                                    duration: 5000,
+                                  });
                                 }
                               }}
                               style={{
@@ -1976,11 +2170,22 @@ export function FinancesPanel({ dashboardData, artists, paymentRequests = [], se
                           color: 'rgba(255, 255, 255, 0.8)',
                           fontWeight: '600'
                         }}>
-                          {new Date(request.date).toLocaleDateString('es-ES', { 
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
+                          {(() => {
+                            try {
+                              const date = new Date(request.date);
+                              // Verificar si la fecha es válida
+                              if (isNaN(date.getTime())) {
+                                return 'Fecha no disponible';
+                              }
+                              return date.toLocaleDateString('es-ES', { 
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              });
+                            } catch (error) {
+                              return 'Fecha no disponible';
+                            }
+                          })()}
                         </div>
                       </div>
                     </div>

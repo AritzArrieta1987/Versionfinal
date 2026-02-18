@@ -13,6 +13,7 @@ export function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [releaseDate, setReleaseDate] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true); // ✅ Track si el componente está montado
@@ -161,18 +162,206 @@ export function UploadPage() {
         return;
       }
 
-      // 🗑️ LIMPIAR TODOS LOS DATOS ANTERIORES
-      console.log('🗑️ Limpiando datos anteriores...');
-      localStorage.removeItem('uploadedCSVs');
-      localStorage.removeItem('dashboardStats');
-      localStorage.removeItem('royaltiesData');
-      localStorage.removeItem('artists');
-      console.log('✅ Datos anteriores eliminados');
+      // ✅ LEER DATOS ANTERIORES PARA ACUMULAR
+      console.log('📥 Leyendo datos anteriores para acumular...');
+      const previousStats = JSON.parse(localStorage.getItem('dashboardStats') || 'null');
+      const previousRoyalties = JSON.parse(localStorage.getItem('royaltiesData') || '[]');
+      const previousArtists = JSON.parse(localStorage.getItem('artists') || '[]');
+      const previousCSVs = JSON.parse(localStorage.getItem('uploadedCSVs') || '[]');
       
-      // Procesar datos de The Orchard
-      const processedData = processTheOrchardData(csvData);
+      // Procesar datos de The Orchard del nuevo CSV
+      const processedData = processTheOrchardData(csvData, releaseDate);
       
-      // Guardar el CSV procesado en localStorage
+      // 🔄 COMBINAR CON DATOS ANTERIORES
+      let combinedStats = processedData.stats;
+      let combinedRoyalties = processedData.royalties;
+      let combinedArtists = processedData.artists;
+      
+      if (previousStats) {
+        console.log('🔄 Combinando con datos anteriores...');
+        console.log('📊 Stats anteriores:', previousStats.totalRevenue);
+        console.log('📊 Stats nuevas:', processedData.stats.totalRevenue);
+        
+        // Combinar totales
+        combinedStats = {
+          totalRevenue: (previousStats.totalRevenue || 0) + processedData.stats.totalRevenue,
+          totalStreams: (previousStats.totalStreams || 0) + processedData.stats.totalStreams,
+          totalArtists: 0, // Se calculará después
+          totalTracks: 0, // Se calculará después
+          platforms: [],
+          territories: [],
+          periods: [],
+          topArtists: []
+        };
+        
+        // Combinar plataformas
+        const platformsMap = new Map();
+        [...(previousStats.platforms || []), ...processedData.stats.platforms].forEach((p: any) => {
+          platformsMap.set(p.name, (platformsMap.get(p.name) || 0) + p.revenue);
+        });
+        combinedStats.platforms = Array.from(platformsMap.entries())
+          .map(([name, revenue]) => ({ name, revenue }))
+          .sort((a, b) => b.revenue - a.revenue);
+        
+        // Combinar territorios
+        const territoriesMap = new Map();
+        [...(previousStats.territories || []), ...processedData.stats.territories].forEach((t: any) => {
+          territoriesMap.set(t.name, (territoriesMap.get(t.name) || 0) + t.revenue);
+        });
+        combinedStats.territories = Array.from(territoriesMap.entries())
+          .map(([name, revenue]) => ({ name, revenue }))
+          .sort((a, b) => b.revenue - a.revenue);
+        
+        // Combinar períodos
+        const periodsMap = new Map();
+        [...(previousStats.periods || []), ...processedData.stats.periods].forEach((p: any) => {
+          periodsMap.set(p.period, (periodsMap.get(p.period) || 0) + p.revenue);
+        });
+        combinedStats.periods = Array.from(periodsMap.entries())
+          .map(([period, revenue]) => ({ period, revenue }))
+          .sort((a, b) => a.period.localeCompare(b.period));
+        
+        // Combinar artistas por nombre
+        const artistsMap = new Map();
+        
+        // Agregar artistas anteriores con todos sus datos
+        previousRoyalties.forEach((royalty: any) => {
+          // Buscar el artista completo en previousArtists
+          const fullArtistData = previousArtists.find((a: any) => a.name === royalty.artistName);
+          
+          artistsMap.set(royalty.artistName, {
+            name: royalty.artistName,
+            totalRevenue: royalty.totalRevenue,
+            totalStreams: royalty.totalStreams,
+            tracks: fullArtistData?.csvData?.tracks || [],
+            platforms: fullArtistData?.csvData?.platforms || [],
+            territories: fullArtistData?.csvData?.territories || [],
+            periods: fullArtistData?.csvData?.periods || []
+          });
+        });
+        
+        // Agregar/combinar artistas nuevos
+        processedData.artists.forEach((artist: any) => {
+          if (artistsMap.has(artist.name)) {
+            const existing = artistsMap.get(artist.name);
+            existing.totalRevenue += artist.totalRevenue;
+            existing.totalStreams += artist.totalStreams;
+            
+            // 🔄 COMBINAR TRACKS (sin duplicados por nombre)
+            const tracksMap = new Map();
+            existing.tracks.forEach((t: any) => tracksMap.set(t.name, t));
+            artist.tracks.forEach((t: any) => {
+              if (tracksMap.has(t.name)) {
+                // Si ya existe, sumar revenue y streams
+                const existingTrack = tracksMap.get(t.name);
+                existingTrack.revenue += t.revenue;
+                existingTrack.streams += t.streams;
+                // Combinar plataformas del track
+                const platformsMap = new Map();
+                existingTrack.platforms.forEach((p: any) => platformsMap.set(p.name, p));
+                t.platforms.forEach((p: any) => {
+                  if (platformsMap.has(p.name)) {
+                    const existingPlatform = platformsMap.get(p.name);
+                    existingPlatform.revenue += p.revenue;
+                    existingPlatform.streams += p.streams;
+                    existingPlatform.details = [...(existingPlatform.details || []), ...(p.details || [])];
+                  } else {
+                    platformsMap.set(p.name, p);
+                  }
+                });
+                existingTrack.platforms = Array.from(platformsMap.values());
+              } else {
+                tracksMap.set(t.name, t);
+              }
+            });
+            existing.tracks = Array.from(tracksMap.values());
+            
+            // 🔄 COMBINAR PLATAFORMAS
+            const platformsMap = new Map();
+            existing.platforms.forEach((p: any) => platformsMap.set(p.name, { name: p.name, revenue: p.revenue }));
+            artist.platforms.forEach((p: any) => {
+              if (platformsMap.has(p.name)) {
+                platformsMap.get(p.name).revenue += p.revenue;
+              } else {
+                platformsMap.set(p.name, { name: p.name, revenue: p.revenue });
+              }
+            });
+            existing.platforms = Array.from(platformsMap.values());
+            
+            // 🔄 COMBINAR TERRITORIOS
+            const territoriesMap = new Map();
+            existing.territories.forEach((t: any) => territoriesMap.set(t.name, { name: t.name, revenue: t.revenue }));
+            artist.territories.forEach((t: any) => {
+              if (territoriesMap.has(t.name)) {
+                territoriesMap.get(t.name).revenue += t.revenue;
+              } else {
+                territoriesMap.set(t.name, { name: t.name, revenue: t.revenue });
+              }
+            });
+            existing.territories = Array.from(territoriesMap.values());
+            
+            // 🔄 COMBINAR PERÍODOS
+            const periodsMap = new Map();
+            existing.periods.forEach((p: any) => periodsMap.set(p.period, { period: p.period, revenue: p.revenue }));
+            artist.periods.forEach((p: any) => {
+              if (periodsMap.has(p.period)) {
+                periodsMap.get(p.period).revenue += p.revenue;
+              } else {
+                periodsMap.set(p.period, { period: p.period, revenue: p.revenue });
+              }
+            });
+            existing.periods = Array.from(periodsMap.values());
+          } else {
+            artistsMap.set(artist.name, {
+              name: artist.name,
+              totalRevenue: artist.totalRevenue,
+              totalStreams: artist.totalStreams,
+              tracks: artist.tracks || [],
+              platforms: artist.platforms || [],
+              territories: artist.territories || [],
+              periods: artist.periods || []
+            });
+          }
+        });
+        
+        combinedArtists = Array.from(artistsMap.values());
+        
+        // Recalcular royalties
+        combinedRoyalties = combinedArtists.map(artist => {
+          const royaltyPercentage = 0.50;
+          const artistRoyalty = artist.totalRevenue * royaltyPercentage;
+          const labelShare = artist.totalRevenue * (1 - royaltyPercentage);
+          
+          return {
+            artistName: artist.name,
+            totalRevenue: artist.totalRevenue,
+            totalStreams: artist.totalStreams,
+            royaltyPercentage: royaltyPercentage * 100,
+            artistRoyalty: artistRoyalty,
+            labelShare: labelShare,
+            trackCount: artist.tracks.length,
+            topTrack: artist.tracks.length > 0 
+              ? [...artist.tracks].sort((a, b) => b.revenue - a.revenue)[0] 
+              : null,
+            platforms: artist.platforms,
+            periods: artist.periods
+          };
+        }).sort((a, b) => b.totalRevenue - a.totalRevenue);
+        
+        // Actualizar topArtists
+        combinedStats.topArtists = [...combinedArtists]
+          .sort((a, b) => b.totalRevenue - a.totalRevenue)
+          .slice(0, 10);
+        
+        combinedStats.totalArtists = combinedArtists.length;
+        combinedStats.totalTracks = combinedArtists.reduce((sum, a) => sum + (a.tracks?.length || 0), 0);
+        
+        console.log('✅ Datos combinados:');
+        console.log('💰 Total Revenue:', combinedStats.totalRevenue);
+        console.log('👥 Total Artistas:', combinedStats.totalArtists);
+      }
+      
+      // Guardar el CSV procesado
       const uploadedFile = {
         id: Date.now(),
         fileName: file.name,
@@ -185,39 +374,70 @@ export function UploadPage() {
         status: 'processed'
       };
 
-      // Guardar como nuevo (array limpio)
-      localStorage.setItem('uploadedCSVs', JSON.stringify([uploadedFile]));
+      // ✅ AGREGAR a la lista de CSVs (no reemplazar)
+      const allCSVs = [...previousCSVs, uploadedFile];
+      localStorage.setItem('uploadedCSVs', JSON.stringify(allCSVs));
 
-      // Guardar estadísticas procesadas para el dashboard
-      localStorage.setItem('dashboardStats', JSON.stringify(processedData.stats));
-      localStorage.setItem('royaltiesData', JSON.stringify(processedData.royalties));
+      // Guardar estadísticas combinadas para el dashboard
+      localStorage.setItem('dashboardStats', JSON.stringify(combinedStats));
+      localStorage.setItem('royaltiesData', JSON.stringify(combinedRoyalties));
 
-      // ✅ CREAR ARTISTAS DESDE CERO CON DATOS DEL CSV
-      const newArtists = [];
-      
-      processedData.artists.forEach((csvArtist, index) => {
+      // ✅ ACTUALIZAR ARTISTAS con datos combinados
+      const updatedArtists = combinedArtists.map((csvArtist, index) => {
+        // Buscar si el artista ya existe
+        const existingArtist = previousArtists.find((a: any) => a.name === csvArtist.name);
+        
         const artistData = {
-          id: index + 1,
-          name: csvArtist.name, // ✅ Nombre real del CSV
-          email: `${csvArtist.name.toLowerCase().replace(/\s+/g, '.')}@artist.com`,
-          phone: '+34 600 000 000',
-          photo: '',
-          contractType: '360',
-          contractPercentage: 50,
-          status: 'active',
-          joinDate: new Date().toISOString(),
-          // ✅ DATOS REALES DEL CSV
+          id: existingArtist?.id || (previousArtists.length + index + 1),
+          name: csvArtist.name,
+          email: existingArtist?.email || `${csvArtist.name.toLowerCase().replace(/\s+/g, '.')}@artist.com`,
+          phone: existingArtist?.phone || '+34 600 000 000',
+          photo: existingArtist?.photo || '',
+          contractType: existingArtist?.contractType || '360',
+          contractPercentage: existingArtist?.contractPercentage || 50,
+          status: existingArtist?.status || 'active',
+          joinDate: existingArtist?.joinDate || new Date().toISOString(),
+          // ✅ DATOS ACUMULADOS
           totalRevenue: csvArtist.totalRevenue,
           totalStreams: csvArtist.totalStreams,
-          csvData: csvArtist // Todos los datos del CSV
+          csvData: {
+            name: csvArtist.name,
+            totalRevenue: csvArtist.totalRevenue,
+            totalStreams: csvArtist.totalStreams,
+            tracks: csvArtist.tracks || [],
+            platforms: csvArtist.platforms || [],
+            territories: csvArtist.territories || [],
+            periods: csvArtist.periods || []
+          }
         };
         
-        newArtists.push(artistData);
+        // Log detallado del primer artista
+        if (index === 0) {
+          console.log('🔍 DEBUG - Primer artista guardado:', {
+            name: artistData.name,
+            totalRevenue: artistData.totalRevenue,
+            totalStreams: artistData.totalStreams,
+            tracks: artistData.csvData.tracks.length,
+            platforms: artistData.csvData.platforms.length,
+            territories: artistData.csvData.territories.length,
+            periods: artistData.csvData.periods.length
+          });
+        }
+        
+        return artistData;
       });
       
-      localStorage.setItem('artists', JSON.stringify(newArtists));
-      console.log('✅ Artistas creados desde CSV:', newArtists.length);
-      console.log('📊 Lista de artistas:', newArtists.map(a => a.name));
+      localStorage.setItem('artists', JSON.stringify(updatedArtists));
+      console.log('✅ Artistas actualizados:', updatedArtists.length);
+      console.log('📊 Resumen por artista:');
+      updatedArtists.forEach((a: any) => {
+        console.log(`  - ${a.name}: €${a.totalRevenue.toFixed(2)}, ${a.csvData.tracks.length} tracks`);
+      });
+      console.log('💰 CSVs acumulados:', allCSVs.length);
+
+      // 🔔 Disparar evento personalizado para notificar a otros componentes
+      window.dispatchEvent(new Event('csvUploaded'));
+      console.log('🔔 Evento csvUploaded disparado');
 
       // ✅ SOLO actualizar estado si el componente sigue montado
       if (isMountedRef.current) {
@@ -227,7 +447,7 @@ export function UploadPage() {
     }, 2000);
   };
 
-  const processTheOrchardData = (data: CSVRow[]) => {
+  const processTheOrchardData = (data: CSVRow[], releaseDate: string) => {
     console.log('🔍 PROCESANDO CSV - Primera fila para debug:', data[0]);
     console.log('🔍 Columnas disponibles:', Object.keys(data[0]));
     
@@ -400,6 +620,7 @@ export function UploadPage() {
           name: trackKey,
           release: releaseName || 'Sin Release',
           isrc: isrc || '',
+          releaseDate: releaseDate || '',
           revenue: 0,
           streams: 0,
           platforms: new Map<string, any>()
@@ -508,7 +729,7 @@ export function UploadPage() {
         platforms,
         territories,
         periods,
-        topArtists: artists.sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 10)
+        topArtists: [...artists].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 10)
       },
       royalties,
       artists
@@ -783,88 +1004,133 @@ export function UploadPage() {
 
       {/* Botones de acción */}
       {file && csvData.length > 0 && (
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <button
-            onClick={handleReset}
-            disabled={isProcessing}
-            style={{
-              flex: '1',
-              minWidth: '200px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '14px 24px',
-              background: 'rgba(201, 165, 116, 0.1)',
-              border: '1px solid rgba(201, 165, 116, 0.3)',
-              borderRadius: '12px',
+        <>
+          {/* Campo de fecha de lanzamiento */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.6) 0%, rgba(30, 47, 47, 0.8) 100%)',
+            border: '1px solid rgba(201, 165, 116, 0.3)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '24px',
+          }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
               color: '#c9a574',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: isProcessing ? 'not-allowed' : 'pointer',
-              opacity: isProcessing ? 0.5 : 1,
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <X size={20} />
-            Cancelar
-          </button>
+              marginBottom: '12px'
+            }}>
+              Fecha de Lanzamiento del Release (opcional)
+            </label>
+            <input
+              type="date"
+              value={releaseDate}
+              onChange={(e) => setReleaseDate(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'rgba(42, 63, 63, 0.4)',
+                border: '1px solid rgba(201, 165, 116, 0.2)',
+                borderRadius: '12px',
+                color: '#ffffff',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'all 0.2s ease'
+              }}
+            />
+            <p style={{
+              fontSize: '12px',
+              color: '#AFB3B7',
+              marginTop: '8px',
+              fontStyle: 'italic'
+            }}>
+              Esta fecha se asociará con todos los releases de este CSV
+            </p>
+          </div>
 
-          <button
-            onClick={handleUpload}
-            disabled={isProcessing || uploadStatus === 'success'}
-            style={{
-              flex: '1',
-              minWidth: '200px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              padding: '14px 24px',
-              background:
-                isProcessing || uploadStatus === 'success'
-                  ? 'rgba(201, 165, 116, 0.5)'
-                  : 'linear-gradient(135deg, #c9a574 0%, #a68a5e 100%)',
-              border: 'none',
-              borderRadius: '12px',
-              color: '#ffffff',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: isProcessing || uploadStatus === 'success' ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow:
-                isProcessing || uploadStatus === 'success'
-                  ? 'none'
-                  : '0 4px 12px rgba(201, 165, 116, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              if (!isProcessing && uploadStatus !== 'success') {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(201, 165, 116, 0.4)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isProcessing && uploadStatus !== 'success') {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.3)';
-              }
-            }}
-          >
-            {isProcessing ? (
-              <>Procesando...</>
-            ) : uploadStatus === 'success' ? (
-              <>
-                <Check size={20} />
-                Procesado
-              </>
-            ) : (
-              <>
-                <Upload size={20} />
-                Procesar y Subir
-              </>
-            )}
-          </button>
-        </div>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleReset}
+              disabled={isProcessing}
+              style={{
+                flex: '1',
+                minWidth: '200px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '14px 24px',
+                background: 'rgba(201, 165, 116, 0.1)',
+                border: '1px solid rgba(201, 165, 116, 0.3)',
+                borderRadius: '12px',
+                color: '#c9a574',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: isProcessing ? 'not-allowed' : 'pointer',
+                opacity: isProcessing ? 0.5 : 1,
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <X size={20} />
+              Cancelar
+            </button>
+
+            <button
+              onClick={handleUpload}
+              disabled={isProcessing || uploadStatus === 'success'}
+              style={{
+                flex: '1',
+                minWidth: '200px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '14px 24px',
+                background:
+                  isProcessing || uploadStatus === 'success'
+                    ? 'rgba(201, 165, 116, 0.5)'
+                    : 'linear-gradient(135deg, #c9a574 0%, #a68a5e 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                color: '#ffffff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: isProcessing || uploadStatus === 'success' ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow:
+                  isProcessing || uploadStatus === 'success'
+                    ? 'none'
+                    : '0 4px 12px rgba(201, 165, 116, 0.3)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isProcessing && uploadStatus !== 'success') {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(201, 165, 116, 0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isProcessing && uploadStatus !== 'success') {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(201, 165, 116, 0.3)';
+                }
+              }}
+            >
+              {isProcessing ? (
+                <>Procesando...</>
+              ) : uploadStatus === 'success' ? (
+                <>
+                  <Check size={20} />
+                  Procesado
+                </>
+              ) : (
+                <>
+                  <Upload size={20} />
+                  Procesar y Subir
+                </>
+              )}
+            </button>
+          </div>
+        </>
       )}
 
       {/* Información adicional */}

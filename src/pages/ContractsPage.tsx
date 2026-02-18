@@ -2,11 +2,14 @@ import { FileText, Plus, Search, Filter } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { ContractCard } from '../components/admin/ContractCard';
 import { AddContractModal } from '../components/admin/AddContractModal';
+import { ContractDetailModal } from '../components/admin/ContractDetailModal';
 
 export function ContractsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [contracts, setContracts] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'pending'>('all');
 
   // Cargar contratos desde localStorage al iniciar
@@ -26,7 +29,10 @@ export function ContractsPage() {
       
       return {
         ...contract,
-        totalRevenue
+        totalRevenue,
+        // Asegurar que existan estas propiedades con valores por defecto
+        isPhysical: contract.isPhysical ?? false,
+        workBilling: contract.workBilling ?? 0
       };
     });
   };
@@ -50,6 +56,11 @@ export function ContractsPage() {
     // Guardar en localStorage
     localStorage.setItem('contracts', JSON.stringify(updatedContracts));
     setShowAddModal(false);
+  };
+
+  const handleViewContract = (contract: any) => {
+    setSelectedContract(contract);
+    setShowDetailModal(true);
   };
 
   // Estadísticas rápidas
@@ -220,7 +231,7 @@ export function ContractsPage() {
             <ContractCard
               key={contract.id}
               contract={contract}
-              onClick={() => console.log('Ver detalles del contrato', contract.id)}
+              onClick={() => handleViewContract(contract)}
             />
           ))}
         </div>
@@ -250,6 +261,13 @@ export function ContractsPage() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleAddContract}
+      />
+
+      {/* Modal para detalles del contrato */}
+      <ContractDetailModal
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        contract={selectedContract}
       />
     </div>
   );

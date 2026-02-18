@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, BarChart3, Music, FileText, DollarSign, LogOut, Disc, CheckCircle, AlertCircle, Info, X, TrendingUp, Calendar, Camera, Settings, Wallet, CreditCard, Globe, Clock, Download, Eye, FileSignature, Package, Play, Pause } from 'lucide-react';
+import { Bell, BarChart3, Music, FileText, DollarSign, LogOut, Disc, CheckCircle, AlertCircle, Info, X, TrendingUp, Calendar, Camera, Settings, Wallet, CreditCard, Globe, Clock, Download, Eye, FileSignature, Package, Play, Pause, Shirt, ShoppingCart } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
 import backgroundImage from 'figma:asset/0a2a9faa1b59d5fa1e388a2eec5b08498dd7a493.png';
@@ -16,6 +16,10 @@ interface ArtistPortalProps {
     tracks: any[];
     monthlyData: { month: string; revenue: number; streams: number }[];
     platformBreakdown: { [key: string]: number };
+    // ✅ AGREGAR VALORES YA CALCULADOS
+    royaltyPercentage?: number;
+    artistRoyalty?: number;
+    labelShare?: number;
   };
 }
 
@@ -33,6 +37,17 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
   };
 
   const data = artistData || defaultData;
+
+  // 🔍 DEBUG: Log de datos recibidos
+  useEffect(() => {
+    console.log('🎨 ArtistPortal - Datos recibidos:', {
+      name: data.name,
+      totalRevenue: data.totalRevenue,
+      artistRoyalty: data.artistRoyalty,
+      royaltyPercentage: data.royaltyPercentage,
+      tracks: data.tracks?.length || 0
+    });
+  }, [data]);
 
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -75,10 +90,55 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
     reference: string;
   }>>([]);
 
+  // Cargar notificaciones del artista desde localStorage
+  useEffect(() => {
+    const loadArtistNotifications = () => {
+      if (data.id) {
+        const artistNotificationKey = `artistNotifications_${data.id}`;
+        const savedNotifications = JSON.parse(localStorage.getItem(artistNotificationKey) || '[]');
+        setNotifications(savedNotifications);
+      }
+    };
+    
+    loadArtistNotifications();
+    
+    // ✅ Escuchar eventos de nuevas notificaciones
+    const handleNotificationReceived = (event: any) => {
+      if (event.detail?.artistId === data.id) {
+        loadArtistNotifications();
+        
+        // ✅ Reproducir sonido de notificación
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGWi78OScTgwMUKXh8LhkHAU3kdXx0H0sASV1xe/glEIKElyx6OyrWBIIR5zd8sFuJAYug8vw3YU2BxlqvO3mm1ENDQ==');
+        audio.play().catch(() => {});
+      }
+    };
+    
+    window.addEventListener('artistNotificationReceived', handleNotificationReceived);
+    
+    return () => {
+      window.removeEventListener('artistNotificationReceived', handleNotificationReceived);
+    };
+  }, [data.id]);
+
   // Cargar audios desde localStorage
   useEffect(() => {
     const savedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
     setTrackAudios(savedAudios);
+    
+    // 🔄 Escuchar cuando se carga un nuevo audio
+    const handleStorageChange = () => {
+      const updatedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
+      setTrackAudios(updatedAudios);
+      console.log('🔔 ArtistPortal: Audios actualizados');
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('trackAudioUploaded', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('trackAudioUploaded', handleStorageChange);
+    };
   }, []);
 
   // Auto-completar titular de cuenta cuando cambian nombre o apellidos
@@ -208,14 +268,24 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
 
   // Función para marcar notificación como leída
   const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => 
+    const updatedNotifications = notifications.map(n => 
       n.id === id ? { ...n, read: true } : n
-    ));
+    );
+    setNotifications(updatedNotifications);
+    
+    // ✅ Guardar en localStorage
+    const artistNotificationKey = `artistNotifications_${data.id}`;
+    localStorage.setItem(artistNotificationKey, JSON.stringify(updatedNotifications));
   };
 
   // Función para eliminar notificación
   const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+    const updatedNotifications = notifications.filter(n => n.id !== id);
+    setNotifications(updatedNotifications);
+    
+    // ✅ Guardar en localStorage
+    const artistNotificationKey = `artistNotifications_${data.id}`;
+    localStorage.setItem(artistNotificationKey, JSON.stringify(updatedNotifications));
   };
 
   // Función para cambiar imagen del banner
@@ -253,13 +323,20 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
     { name: 'Configuración', icon: Settings }
   ];
 
-  // Calcular el porcentaje de royalty desde los contratos activos
-  const activeContract = contracts.find(c => c.status === 'active');
-  const royaltyPercentage = activeContract?.royaltyPercentage || data.royaltyPercentage || 50;
+  // ✅ USAR VALORES YA CALCULADOS EN ArtistPortalPage (misma lógica que Dashboard)
+  const totalRoyalties = data.totalRevenue || 0;
+  const totalArtista = data.artistRoyalty || 0;
+  const totalBAM = data.labelShare || 0;
+  const royaltyPercentage = data.royaltyPercentage || 50;
   
-  // Calcular el monto que le corresponde al artista basado en el contrato
-  const artistRevenue = data.totalRevenue * (royaltyPercentage / 100);
-  const labelShare = data.totalRevenue * ((100 - royaltyPercentage) / 100);
+  // 🔍 DEBUG: Mostrar valores recibidos
+  console.log('🎯🎯🎯 ===== ARTIST PORTAL ACTUALIZADO V2 ===== 🎯🎯🎯');
+  console.log('💵 VALORES RECIBIDOS EN ARTISTPORTAL (calculados en ArtistPortalPage):');
+  console.log('  - totalRoyalties (bruto):', totalRoyalties);
+  console.log('  - royaltyPercentage:', royaltyPercentage + '%');
+  console.log('  - totalArtista:', totalArtista);
+  console.log('  - totalBAM:', totalBAM);
+  console.log('🎯🎯🎯 ========================================= 🎯🎯🎯');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -316,17 +393,16 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(data.totalRevenue).split('€')[0]}
+                  {totalRoyalties.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
-                  color: '#4ade80',
+                  color: '#9ca3af',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
                 }}>
-                  <TrendingUp size={isMobile ? 10 : 12} />
-                  <span>Balance disponible</span>
+                  <span>Ingresos totales acumulados ✅ V2</span>
                 </div>
               </div>
 
@@ -373,7 +449,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(artistRevenue)}
+                  {totalArtista.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -429,7 +505,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   letterSpacing: '-0.5px',
                   marginBottom: isMobile ? '6px' : '8px'
                 }}>
-                  {formatEuro(labelShare)}
+                  {totalBAM.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€
                 </div>
                 <div style={{
                   fontSize: isMobile ? '11px' : '12px',
@@ -470,7 +546,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                 </h2>
                 
                 {data.monthlyData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
+                  <ResponsiveContainer width="100%" height={isMobile ? 150 : 180}>
                     <LineChart data={data.monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(201, 165, 116, 0.1)" />
                       <XAxis 
@@ -497,15 +573,15 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                         type="monotone" 
                         dataKey="revenue" 
                         stroke="#c9a574" 
-                        strokeWidth={3}
-                        dot={{ fill: '#c9a574', r: 4 }}
-                        activeDot={{ r: 6 }}
+                        strokeWidth={2}
+                        dot={{ fill: '#c9a574', r: 3 }}
+                        activeDot={{ r: 5 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
                   <div style={{
-                    height: '250px',
+                    height: '180px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -921,6 +997,11 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
         );
       
       case 'Físico':
+        const physicalSalesData = JSON.parse(localStorage.getItem('physicalSales') || '[]');
+        const myPhysicalSales = physicalSalesData.filter((sale: any) => sale.artistName === data.name);
+        const myTotalPhysicalRevenue = myPhysicalSales.reduce((sum: number, sale: any) => sum + (sale.totalRevenue || 0), 0);
+        const myTotalPhysicalUnits = myPhysicalSales.reduce((sum: number, sale: any) => sum + (sale.unitsSold || 0), 0);
+        
         return (
           <div>
             <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', marginBottom: '8px', color: '#ffffff' }}>
@@ -930,64 +1011,294 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
               Tus ventas de discos físicos y merchandising
             </p>
             
-            {/* En construcción */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
-              border: '1px solid rgba(201, 165, 116, 0.2)',
-              borderRadius: '20px',
-              padding: isMobile ? '48px 24px' : '80px 48px',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '24px',
-            }}>
+            {myPhysicalSales.length > 0 ? (
+              <>
+                {/* Estadísticas */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                  gap: isMobile ? '12px' : '20px',
+                  marginBottom: isMobile ? '24px' : '32px'
+                }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(201, 165, 116, 0.15) 0%, rgba(201, 165, 116, 0.05) 100%)',
+                    borderRadius: '16px',
+                    padding: isMobile ? '20px' : '24px',
+                    border: '1px solid rgba(201, 165, 116, 0.3)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        background: 'rgba(201, 165, 116, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Package size={20} color="#c9a574" />
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', textTransform: 'uppercase' }}>
+                        Total Productos
+                      </span>
+                    </div>
+                    <div style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '700', color: '#c9a574' }}>
+                      {myPhysicalSales.length}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(42, 63, 63, 0.4)',
+                    borderRadius: '16px',
+                    padding: isMobile ? '20px' : '24px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        background: 'rgba(201, 165, 116, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <ShoppingCart size={20} color="#c9a574" />
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', textTransform: 'uppercase' }}>
+                        Unidades Vendidas
+                      </span>
+                    </div>
+                    <div style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '700', color: '#ffffff' }}>
+                      {myTotalPhysicalUnits.toLocaleString('es-ES')}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'rgba(42, 63, 63, 0.4)',
+                    borderRadius: '16px',
+                    padding: isMobile ? '20px' : '24px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        background: 'rgba(34, 197, 94, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <DollarSign size={20} color="#22c55e" />
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600', textTransform: 'uppercase' }}>
+                        Ingresos Totales
+                      </span>
+                    </div>
+                    <div style={{ fontSize: isMobile ? '28px' : '32px', fontWeight: '700', color: '#22c55e' }}>
+                      €{myTotalPhysicalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de Productos */}
+                <div style={{
+                  background: 'rgba(42, 63, 63, 0.3)',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(201, 165, 116, 0.2)',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    padding: isMobile ? '16px' : '20px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <h3 style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: '700', color: '#ffffff', margin: 0 }}>
+                      Mis Productos
+                    </h3>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th style={{
+                            padding: isMobile ? '12px' : '16px',
+                            background: 'rgba(201, 165, 116, 0.1)',
+                            borderBottom: '2px solid rgba(201, 165, 116, 0.3)',
+                            fontSize: isMobile ? '11px' : '13px',
+                            fontWeight: '700',
+                            color: '#c9a574',
+                            textAlign: 'left',
+                            textTransform: 'uppercase'
+                          }}>
+                            Producto
+                          </th>
+                          <th style={{
+                            padding: isMobile ? '12px' : '16px',
+                            background: 'rgba(201, 165, 116, 0.1)',
+                            borderBottom: '2px solid rgba(201, 165, 116, 0.3)',
+                            fontSize: isMobile ? '11px' : '13px',
+                            fontWeight: '700',
+                            color: '#c9a574',
+                            textAlign: 'right',
+                            textTransform: 'uppercase'
+                          }}>
+                            Precio
+                          </th>
+                          <th style={{
+                            padding: isMobile ? '12px' : '16px',
+                            background: 'rgba(201, 165, 116, 0.1)',
+                            borderBottom: '2px solid rgba(201, 165, 116, 0.3)',
+                            fontSize: isMobile ? '11px' : '13px',
+                            fontWeight: '700',
+                            color: '#c9a574',
+                            textAlign: 'right',
+                            textTransform: 'uppercase'
+                          }}>
+                            Unidades
+                          </th>
+                          <th style={{
+                            padding: isMobile ? '12px' : '16px',
+                            background: 'rgba(201, 165, 116, 0.1)',
+                            borderBottom: '2px solid rgba(201, 165, 116, 0.3)',
+                            fontSize: isMobile ? '11px' : '13px',
+                            fontWeight: '700',
+                            color: '#c9a574',
+                            textAlign: 'right',
+                            textTransform: 'uppercase'
+                          }}>
+                            % Royalty
+                          </th>
+                          <th style={{
+                            padding: isMobile ? '12px' : '16px',
+                            background: 'rgba(201, 165, 116, 0.1)',
+                            borderBottom: '2px solid rgba(201, 165, 116, 0.3)',
+                            fontSize: isMobile ? '11px' : '13px',
+                            fontWeight: '700',
+                            color: '#c9a574',
+                            textAlign: 'right',
+                            textTransform: 'uppercase'
+                          }}>
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {myPhysicalSales.map((product: any, index: number) => (
+                          <tr key={index} style={{
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                            transition: 'background 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(201, 165, 116, 0.05)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <td style={{ padding: isMobile ? '12px' : '16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {product.photo ? (
+                                  <img
+                                    src={product.photo}
+                                    alt={product.name}
+                                    style={{
+                                      width: '48px',
+                                      height: '48px',
+                                      borderRadius: '8px',
+                                      objectFit: 'cover',
+                                      border: '2px solid rgba(201, 165, 116, 0.3)'
+                                    }}
+                                  />
+                                ) : (
+                                  <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '8px',
+                                    background: 'rgba(201, 165, 116, 0.1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '2px solid rgba(201, 165, 116, 0.3)'
+                                  }}>
+                                    {product.type === 'CD' || product.type === 'Vinyl' ? (
+                                      <Disc size={20} color="#c9a574" />
+                                    ) : product.type === 'T-Shirt' ? (
+                                      <Shirt size={20} color="#c9a574" />
+                                    ) : (
+                                      <Package size={20} color="#c9a574" />
+                                    )}
+                                  </div>
+                                )}
+                                <div>
+                                  <div style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: '600', color: '#ffffff' }}>
+                                    {product.name}
+                                  </div>
+                                  <div style={{ fontSize: isMobile ? '11px' : '12px', color: '#AFB3B7', marginTop: '2px' }}>
+                                    {product.type}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: isMobile ? '12px' : '16px', fontSize: isMobile ? '13px' : '14px', fontWeight: '600', color: '#ffffff', textAlign: 'right' }}>
+                              €{product.price.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td style={{ padding: isMobile ? '12px' : '16px', fontSize: isMobile ? '13px' : '14px', color: '#c9a574', fontWeight: '600', textAlign: 'right' }}>
+                              {product.unitsSold}
+                            </td>
+                            <td style={{ padding: isMobile ? '12px' : '16px', fontSize: isMobile ? '13px' : '14px', color: '#c9a574', fontWeight: '600', textAlign: 'right' }}>
+                              {product.royaltyPercentage || 100}%
+                            </td>
+                            <td style={{ padding: isMobile ? '12px' : '16px', fontSize: isMobile ? '13px' : '14px', fontWeight: '700', color: '#22c55e', textAlign: 'right' }}>
+                              €{product.totalRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : (
               <div style={{
-                width: isMobile ? '80px' : '120px',
-                height: isMobile ? '80px' : '120px',
-                borderRadius: '50%',
-                background: 'rgba(201, 165, 116, 0.15)',
+                background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.4) 0%, rgba(30, 47, 47, 0.6) 100%)',
+                border: '1px solid rgba(201, 165, 116, 0.2)',
+                borderRadius: '20px',
+                padding: isMobile ? '48px 24px' : '80px 48px',
+                textAlign: 'center',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: '24px',
               }}>
-                <Package size={isMobile ? 40 : 60} color="#c9a574" />
-              </div>
+                <div style={{
+                  width: isMobile ? '80px' : '120px',
+                  height: isMobile ? '80px' : '120px',
+                  borderRadius: '50%',
+                  background: 'rgba(201, 165, 116, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Package size={isMobile ? 40 : 60} color="#c9a574" />
+                </div>
 
-              <div>
-                <h2 style={{
-                  fontSize: isMobile ? '24px' : '32px',
-                  fontWeight: '700',
-                  color: '#ffffff',
-                  marginBottom: '12px',
-                }}>
-                  En Construcción
-                </h2>
-                <p style={{
-                  fontSize: isMobile ? '14px' : '16px',
-                  color: '#AFB3B7',
-                  lineHeight: '1.6',
-                  maxWidth: '500px',
-                }}>
-                  Próximamente podrás consultar aquí tus ventas de discos físicos, vinilos, CDs y merchandising.
-                </p>
+                <div>
+                  <h2 style={{
+                    fontSize: isMobile ? '24px' : '32px',
+                    fontWeight: '700',
+                    color: '#ffffff',
+                    marginBottom: '12px',
+                  }}>
+                    No hay ventas físicas
+                  </h2>
+                  <p style={{
+                    fontSize: isMobile ? '14px' : '16px',
+                    color: '#AFB3B7',
+                    lineHeight: '1.6',
+                    maxWidth: '500px',
+                  }}>
+                    Aún no tienes productos físicos registrados. Contacta con el administrador para agregar CDs, vinilos o merchandising.
+                  </p>
+                </div>
               </div>
-
-              <div style={{
-                padding: '16px 24px',
-                background: 'rgba(201, 165, 116, 0.1)',
-                border: '1px solid rgba(201, 165, 116, 0.3)',
-                borderRadius: '12px',
-              }}>
-                <p style={{
-                  fontSize: '13px',
-                  color: '#c9a574',
-                  fontWeight: '600',
-                }}>
-                  🚧 Funcionalidad en desarrollo
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         );
       
@@ -1132,7 +1443,7 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                       textShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
                       filter: 'drop-shadow(0 2px 4px rgba(255, 255, 255, 0.1))'
                     }}>
-                      {formatEuro(artistRevenue)}
+                      {formatEuro(totalArtista)}
                     </div>
                   </div>
 
@@ -1224,35 +1535,85 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                   Completa tus datos bancarios para recibir el pago
                 </p>
 
-                <form onSubmit={(e) => {
+                <form onSubmit={async (e) => {
                   e.preventDefault();
                   
-                  const today = new Date();
-                  const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-                  
-                  const newId = paymentHistory.length > 0 ? Math.max(...paymentHistory.map(p => p.id)) + 1 : 1;
-                  const reference = `PAY-${today.getFullYear()}-${newId.toString().padStart(3, '0')}`;
-                  
-                  const newPayment = {
-                    id: newId,
-                    date: formattedDate,
-                    amount: parseFloat(paymentFormData.amount),
-                    status: 'Pendiente',
-                    method: 'Transferencia Bancaria',
-                    reference: reference
-                  };
-                  
-                  setPaymentHistory([newPayment, ...paymentHistory]);
-                  
-                  setPaymentFormData({
-                    firstName: '',
-                    lastName: '',
-                    accountHolder: '',
-                    iban: '',
-                    amount: ''
-                  });
-                  
-                  setShowPaymentSuccess(true);
+                  try {
+                    const today = new Date();
+                    const newId = Date.now();
+                    const reference = `PAY-${today.getFullYear()}-${newId.toString().slice(-3)}`;
+                    
+                    const paymentRequest = {
+                      id: newId,
+                      artistId: data.id,
+                      artistName: data.name,
+                      artistEmail: data.email,
+                      firstName: paymentFormData.firstName,
+                      lastName: paymentFormData.lastName,
+                      accountHolder: paymentFormData.accountHolder,
+                      iban: paymentFormData.iban,
+                      amount: parseFloat(paymentFormData.amount),
+                      status: 'Pendiente',
+                      method: 'Transferencia Bancaria',
+                      reference: reference,
+                      date: today.toISOString(),
+                      createdAt: today.toISOString()
+                    };
+                    
+                    // Guardar en localStorage
+                    const existingRequests = JSON.parse(localStorage.getItem('paymentRequests') || '[]');
+                    existingRequests.unshift(paymentRequest);
+                    localStorage.setItem('paymentRequests', JSON.stringify(existingRequests));
+                    
+                    // Crear notificación
+                    const notification = {
+                      id: newId,
+                      type: 'payment_request',
+                      artistId: data.id,
+                      artistName: data.name,
+                      amount: parseFloat(paymentFormData.amount),
+                      text: `${data.name} ha solicitado un pago de ${parseFloat(paymentFormData.amount).toFixed(2)}€`,
+                      time: 'Ahora',
+                      read: false,
+                      createdAt: today.toISOString()
+                    };
+                    
+                    const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+                    existingNotifications.unshift(notification);
+                    localStorage.setItem('notifications', JSON.stringify(existingNotifications));
+                    
+                    // Disparar evento personalizado para actualizar la UI
+                    window.dispatchEvent(new CustomEvent('paymentRequested', { 
+                      detail: paymentRequest 
+                    }));
+                    
+                    // Agregar al historial local
+                    const newPayment = {
+                      id: newId,
+                      date: today.toLocaleDateString('es-ES'),
+                      amount: parseFloat(paymentFormData.amount),
+                      status: 'Pendiente',
+                      method: 'Transferencia Bancaria',
+                      reference: reference
+                    };
+                    
+                    setPaymentHistory([newPayment, ...paymentHistory]);
+                    
+                    // Limpiar formulario
+                    setPaymentFormData({
+                      firstName: '',
+                      lastName: '',
+                      accountHolder: '',
+                      iban: '',
+                      amount: ''
+                    });
+                    
+                    setShowPaymentSuccess(true);
+                    
+                  } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al procesar la solicitud. Por favor, intenta de nuevo.');
+                  }
                 }}>
                   <div style={{
                     display: 'grid',

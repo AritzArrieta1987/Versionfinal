@@ -6,18 +6,55 @@ export function HomePage() {
   const [stats, setStats] = useState<any>(null);
   const [royalties, setRoyalties] = useState<any[]>([]);
 
-  useEffect(() => {
-    // Cargar datos procesados del CSV
+  // 🔄 Función para cargar datos desde localStorage
+  const loadData = () => {
     const dashboardStats = localStorage.getItem('dashboardStats');
     const royaltiesData = localStorage.getItem('royaltiesData');
     
+    console.log('🔄 HomePage: Cargando datos desde localStorage...');
+    console.log('📊 dashboardStats:', dashboardStats ? 'ENCONTRADO' : 'NO ENCONTRADO');
+    console.log('💰 royaltiesData:', royaltiesData ? 'ENCONTRADO' : 'NO ENCONTRADO');
+    
     if (dashboardStats) {
-      setStats(JSON.parse(dashboardStats));
+      const parsedStats = JSON.parse(dashboardStats);
+      console.log('✅ Stats parseados:', parsedStats);
+      setStats(parsedStats);
+    } else {
+      setStats(null);
     }
     
     if (royaltiesData) {
       setRoyalties(JSON.parse(royaltiesData));
+    } else {
+      setRoyalties([]);
     }
+  };
+
+  useEffect(() => {
+    // Cargar datos al montar
+    loadData();
+
+    // 🔄 Escuchar cambios en localStorage (cuando se sube un CSV)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'dashboardStats' || e.key === 'royaltiesData') {
+        console.log('🔔 Detectado cambio en localStorage:', e.key);
+        loadData();
+      }
+    };
+
+    // 🔄 También escuchar evento personalizado para actualizaciones en la misma pestaña
+    const handleCustomUpdate = () => {
+      console.log('🔔 Detectado evento de actualización CSV');
+      loadData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('csvUploaded', handleCustomUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('csvUploaded', handleCustomUpdate);
+    };
   }, []);
 
   if (!stats) {

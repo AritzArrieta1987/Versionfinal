@@ -24,12 +24,50 @@ function DashboardContent() {
   const { setOpen } = useSidebar();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [user, setUser] = useState<{ name: string; type: string; email?: string } | null>(null);
+  const [notifications, setNotifications] = useState<{ id: number; text: string; time: string; read: boolean }[]>([]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
     }
+
+    // Cargar notificaciones existentes desde localStorage
+    const loadNotifications = () => {
+      const storedNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+      setNotifications(storedNotifications);
+    };
+    
+    loadNotifications();
+    
+    // Escuchar eventos personalizados de nuevas solicitudes de pago
+    const handlePaymentRequest = (event: any) => {
+      console.log('🔔 Nueva solicitud de pago recibida:', event.detail);
+      
+      const data = event.detail;
+      const newNotification = {
+        id: Date.now(),
+        text: `${data.artistName} ha solicitado un pago de ${data.amount.toFixed(2)}€`,
+        time: 'Ahora',
+        read: false
+      };
+      
+      setNotifications(prev => [newNotification, ...prev]);
+      
+      // Reproducir sonido de notificación
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYJGGS64OefTBANUKrm8LJfGgU7k9nywn0zBSR8zPLYiTUIGWq86+2hTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGAU7k9nyw38wBCF+zvLZiTYJGWq86+2gTQ8OTq3k8LJeGA==');
+        audio.play();
+      } catch (err) {
+        console.log('No se pudo reproducir el sonido de notificación');
+      }
+    };
+    
+    window.addEventListener('paymentRequested', handlePaymentRequest);
+    
+    return () => {
+      window.removeEventListener('paymentRequested', handlePaymentRequest);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -42,7 +80,7 @@ function DashboardContent() {
     { path: '/', icon: Home, label: 'Dashboard' },
   ];
 
-  const notifications: { id: number; text: string; time: string }[] = [];
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <>
@@ -105,8 +143,8 @@ function DashboardContent() {
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
               >
                 <Bell size={20} />
-                {notifications.length > 0 && (
-                  <span className="notification-badge">{notifications.length}</span>
+                {unreadCount > 0 && (
+                  <span className="notification-badge">{unreadCount}</span>
                 )}
               </button>
 
@@ -119,12 +157,27 @@ function DashboardContent() {
                   <div className="notifications-dropdown">
                     <div className="notifications-header">
                       <h3>Notificaciones</h3>
-                      <span className="badge">{notifications.length}</span>
+                      <span className="badge">{unreadCount}</span>
                     </div>
                     <div className="notifications-list">
                       {notifications.map((notif) => (
-                        <div key={notif.id} className="notification-item">
-                          <div className="notification-dot"></div>
+                        <div 
+                          key={notif.id} 
+                          className="notification-item"
+                          onClick={() => {
+                            // Marcar como leída
+                            setNotifications(prev => 
+                              prev.map(n => n.id === notif.id ? { ...n, read: true } : n)
+                            );
+                            // Navegar a finanzas
+                            navigate('/finances');
+                            setNotificationsOpen(false);
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="notification-dot" style={{ 
+                            background: notif.read ? 'rgba(201, 165, 116, 0.3)' : '#c9a574' 
+                          }}></div>
                           <div>
                             <p className="notification-text">{notif.text}</p>
                             <span className="notification-time">{notif.time}</span>
@@ -132,7 +185,13 @@ function DashboardContent() {
                         </div>
                       ))}
                     </div>
-                    <button className="notifications-footer">
+                    <button 
+                      className="notifications-footer"
+                      onClick={() => {
+                        navigate('/finances');
+                        setNotificationsOpen(false);
+                      }}
+                    >
                       Ver todas las notificaciones
                     </button>
                   </div>

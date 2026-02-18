@@ -16,6 +16,33 @@ export function FinancesPage() {
 
   useEffect(() => {
     loadFinanceData();
+    
+    // Escuchar eventos personalizados de nuevas solicitudes de pago
+    const handlePaymentRequest = (event: any) => {
+      console.log('🔔 Nueva solicitud de pago en Finanzas:', event.detail);
+      
+      const data = event.detail;
+      // Agregar la nueva solicitud a la lista
+      setPaymentRequests(prev => [{
+        id: data.id,
+        artist_id: data.artistId,
+        artist_name: data.artistName,
+        amount: data.amount,
+        status: 'pending',
+        created_at: data.createdAt,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        account_holder: data.accountHolder,
+        iban: data.iban,
+        reference: data.reference
+      }, ...prev]);
+    };
+    
+    window.addEventListener('paymentRequested', handlePaymentRequest);
+    
+    return () => {
+      window.removeEventListener('paymentRequested', handlePaymentRequest);
+    };
   }, []);
 
   const loadFinanceData = async () => {
@@ -49,6 +76,23 @@ export function FinancesPage() {
         });
         
         setArtists(localArtists);
+        
+        // Cargar solicitudes de pago desde localStorage
+        const localPaymentRequests = JSON.parse(localStorage.getItem('paymentRequests') || '[]');
+        const formattedRequests = localPaymentRequests.map((req: any) => ({
+          id: req.id,
+          artist_id: req.artistId,
+          artist_name: req.artistName,
+          amount: req.amount,
+          status: req.status === 'Pendiente' ? 'pending' : req.status.toLowerCase(),
+          created_at: req.createdAt || req.date,
+          first_name: req.firstName,
+          last_name: req.lastName,
+          account_holder: req.accountHolder,
+          iban: req.iban,
+          reference: req.reference
+        }));
+        setPaymentRequests(formattedRequests);
       } else {
         // Si no hay datos del CSV, intentar cargar del backend
         const token = localStorage.getItem('token');

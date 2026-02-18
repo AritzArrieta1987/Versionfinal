@@ -15,6 +15,18 @@ export function CatalogPage() {
 
   useEffect(() => {
     loadTracksFromCSV();
+    
+    // 🔄 Escuchar cuando se sube un nuevo CSV
+    const handleCSVUploaded = () => {
+      console.log('🔔 CatalogPage: Detectado nuevo CSV, recargando tracks...');
+      loadTracksFromCSV();
+    };
+    
+    window.addEventListener('csvUploaded', handleCSVUploaded);
+    
+    return () => {
+      window.removeEventListener('csvUploaded', handleCSVUploaded);
+    };
   }, []);
 
   useEffect(() => {
@@ -31,34 +43,67 @@ export function CatalogPage() {
     const uploadedCSVs = JSON.parse(localStorage.getItem('uploadedCSVs') || '[]');
     const savedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
     
-    if (uploadedCSVs.length > 0 && uploadedCSVs[0].processedData) {
-      const processedData = uploadedCSVs[0].processedData;
-      const csvArtists = processedData.artists || [];
-      
-      // Extraer todas las canciones de todos los artistas
+    console.log('🎵 Catálogo: Cargando tracks de', uploadedCSVs.length, 'CSVs');
+    
+    if (uploadedCSVs.length > 0) {
+      // ✅ COMBINAR TRACKS DE TODOS LOS CSVs
       const allTracks = [];
       const artistNames = new Set();
+      const tracksMap = new Map(); // Para evitar duplicados por ISRC
       
-      csvArtists.forEach(artist => {
-        artistNames.add(artist.name);
-        
-        artist.tracks.forEach(track => {
-          const trackId = track.isrc || `${artist.name}-${track.name}`;
-          allTracks.push({
-            id: trackId,
-            name: track.name,
-            artistName: artist.name,
-            release: track.release,
-            isrc: track.isrc,
-            revenue: track.revenue,
-            streams: track.streams,
-            platforms: track.platforms,
-            audioUrl: savedAudios[trackId] || null
+      uploadedCSVs.forEach((csv, csvIndex) => {
+        if (csv.processedData && csv.processedData.artists) {
+          console.log(`📁 CSV ${csvIndex + 1}: ${csv.fileName}, ${csv.processedData.artists.length} artistas`);
+          
+          csv.processedData.artists.forEach(artist => {
+            artistNames.add(artist.name);
+            
+            artist.tracks.forEach(track => {
+              const trackId = track.isrc || `${artist.name}-${track.name}`;
+              
+              // Si el track ya existe (mismo ISRC), combinar datos
+              if (tracksMap.has(trackId)) {
+                const existing = tracksMap.get(trackId);
+                existing.revenue += track.revenue || 0;
+                existing.streams += track.streams || 0;
+                
+                // Combinar plataformas
+                if (track.platforms) {
+                  Object.entries(track.platforms).forEach(([platform, data]) => {
+                    if (existing.platforms[platform]) {
+                      existing.platforms[platform].revenue += data.revenue || 0;
+                      existing.platforms[platform].streams += data.streams || 0;
+                    } else {
+                      existing.platforms[platform] = { ...data };
+                    }
+                  });
+                }
+              } else {
+                // Nuevo track
+                tracksMap.set(trackId, {
+                  id: trackId,
+                  name: track.name,
+                  artistName: artist.name,
+                  release: track.release,
+                  isrc: track.isrc,
+                  revenue: track.revenue || 0,
+                  streams: track.streams || 0,
+                  platforms: track.platforms ? { ...track.platforms } : {},
+                  audioUrl: savedAudios[trackId] || null
+                });
+              }
+            });
           });
-        });
+        }
       });
       
-      setTracks(allTracks);
+      // Convertir Map a array
+      const combinedTracks = Array.from(tracksMap.values());
+      
+      console.log('✅ Total tracks combinados:', combinedTracks.length);
+      console.log('👥 Artistas únicos:', artistNames.size);
+      
+      setTracks(combinedTracks);
       setArtists(['all', ...Array.from(artistNames)]);
     }
   };
@@ -74,6 +119,10 @@ export function CatalogPage() {
         const savedAudios = JSON.parse(localStorage.getItem('trackAudios') || '{}');
         savedAudios[trackId] = audioUrl;
         localStorage.setItem('trackAudios', JSON.stringify(savedAudios));
+        
+        // 🔔 Disparar evento para notificar a otros componentes
+        window.dispatchEvent(new Event('trackAudioUploaded'));
+        console.log('🔔 Audio subido, evento disparado para trackId:', trackId);
         
         // Actualizar tracks
         setTracks(prevTracks => prevTracks.map(track => 
@@ -254,44 +303,6 @@ export function CatalogPage() {
             <option key={artist} value={artist}>{artist}</option>
           ))}
         </select>
-      </div>
-
-      {/* Estadísticas */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
-        marginBottom: '32px'
-      }}>
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.6) 0%, rgba(30, 47, 47, 0.8) 100%)',
-          border: '1px solid rgba(201, 165, 116, 0.3)',
-          borderRadius: '12px',
-          padding: '20px'
-        }}>
-          <p style={{ fontSize: '13px', color: '#AFB3B7', marginBottom: '8px' }}>Total Canciones</p>
-          <p style={{ fontSize: '24px', fontWeight: '700', color: '#c9a574' }}>{tracks.length}</p>
-        </div>
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.6) 0%, rgba(30, 47, 47, 0.8) 100%)',
-          border: '1px solid rgba(201, 165, 116, 0.3)',
-          borderRadius: '12px',
-          padding: '20px'
-        }}>
-          <p style={{ fontSize: '13px', color: '#AFB3B7', marginBottom: '8px' }}>Total Artistas</p>
-          <p style={{ fontSize: '24px', fontWeight: '700', color: '#c9a574' }}>{Math.max(0, artists.length - 1)}</p>
-        </div>
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.6) 0%, rgba(30, 47, 47, 0.8) 100%)',
-          border: '1px solid rgba(201, 165, 116, 0.3)',
-          borderRadius: '12px',
-          padding: '20px'
-        }}>
-          <p style={{ fontSize: '13px', color: '#AFB3B7', marginBottom: '8px' }}>Total Streams</p>
-          <p style={{ fontSize: '24px', fontWeight: '700', color: '#c9a574' }}>
-            {tracks.reduce((sum, t) => sum + t.streams, 0).toLocaleString('es-ES')}
-          </p>
-        </div>
       </div>
 
       {/* Lista de canciones */}
