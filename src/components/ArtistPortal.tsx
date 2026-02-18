@@ -2257,10 +2257,8 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                       border: contract.status === 'Activo' ? '2px solid rgba(201, 165, 116, 0.4)' : '1px solid rgba(201, 165, 116, 0.2)',
                       borderRadius: isMobile ? '12px' : '16px',
                       padding: isMobile ? '18px' : '24px',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer'
+                      transition: 'all 0.3s ease'
                     }}
-                    onClick={() => setSelectedContract(contract)}
                   >
                     <div style={{
                       display: 'flex',
@@ -2377,46 +2375,68 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                       display: 'flex',
                       justifyContent: 'center'
                     }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedContract(contract);
-                          setShowPDFViewer(true);
-                        }}
-                        style={{
-                          width: '100%',
-                          background: contract.signedAt 
-                            ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
-                            : 'linear-gradient(135deg, #c9a574 0%, #b8956a 100%)',
-                          border: 'none',
-                          borderRadius: '10px',
-                          padding: '12px 20px',
-                          color: contract.signedAt ? '#ffffff' : '#1a1a1a',
-                          fontSize: '14px',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          transition: 'all 0.2s ease',
-                          boxShadow: contract.signedAt 
-                            ? '0 4px 12px rgba(34, 197, 94, 0.3)'
-                            : '0 4px 12px rgba(201, 165, 116, 0.3)'
-                        }}
-                      >
-                        {contract.signedAt ? (
-                          <>
-                            <Eye size={16} />
-                            Ver Contrato Firmado
-                          </>
-                        ) : (
-                          <>
-                            <FileSignature size={16} />
-                            Ver y Firmar Contrato
-                          </>
-                        )}
-                      </button>
+                      {contract.contractPDF ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedContract(contract);
+                            setShowPDFViewer(true);
+                          }}
+                          style={{
+                            width: '100%',
+                            background: contract.signedAt 
+                              ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                              : 'linear-gradient(135deg, #c9a574 0%, #b8956a 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '12px 20px',
+                            color: contract.signedAt ? '#ffffff' : '#1a1a1a',
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: contract.signedAt 
+                              ? '0 4px 12px rgba(34, 197, 94, 0.3)'
+                              : '0 4px 12px rgba(201, 165, 116, 0.3)'
+                          }}
+                        >
+                          {contract.signedAt ? (
+                            <>
+                              <Eye size={16} />
+                              Ver Contrato Firmado
+                            </>
+                          ) : (
+                            <>
+                              <FileSignature size={16} />
+                              Ver y Firmar Contrato
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <div
+                          style={{
+                            width: '100%',
+                            padding: '12px 20px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '10px',
+                            color: '#ef4444',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <AlertCircle size={16} />
+                          PDF no disponible
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

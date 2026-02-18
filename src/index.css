@@ -449,12 +449,6 @@
   }
 }
 
-body {
-  color: #f8f9fa;
-  background: #2a3f3f;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
-}
-
 :root {
   --bg-dark: #2a3f3f;
   --accent-gold: #c9a574;

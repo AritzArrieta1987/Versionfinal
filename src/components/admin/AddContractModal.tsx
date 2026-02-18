@@ -123,7 +123,7 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
       status: formData.status,
       totalRevenue: 0, // Inicialmente 0
       isPhysical: formData.isPhysical,
-      workBilling: formData.workBilling,
+      workBilling: parseFloat(formData.workBilling) || 0,
       contractPDF: formData.contractPDF,
       contractPDFName: formData.contractPDFName,
     };
