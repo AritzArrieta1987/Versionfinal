@@ -1,4 +1,4 @@
-import { X, FileText, User, Percent, Calendar, FileSignature, FileCheck, Euro, Users } from 'lucide-react';
+import { X, FileText, User, Percent, Calendar, FileSignature, FileCheck, Euro, Users, Upload } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface AddContractModalProps {
@@ -18,6 +18,8 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
     status: 'active' as 'active' | 'expired' | 'pending',
     isPhysical: false,
     workBilling: '',
+    contractPDF: '', // Base64 del PDF
+    contractPDFName: '', // Nombre del archivo
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,6 +43,8 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
         status: 'active',
         isPhysical: false,
         workBilling: '',
+        contractPDF: '',
+        contractPDFName: '',
       });
       setErrors({});
       setUseExistingArtist(true);
@@ -120,6 +124,8 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
       totalRevenue: 0, // Inicialmente 0
       isPhysical: formData.isPhysical,
       workBilling: formData.workBilling,
+      contractPDF: formData.contractPDF,
+      contractPDFName: formData.contractPDFName,
     };
 
     onSave(newContract);
@@ -135,6 +141,8 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
       status: 'active',
       isPhysical: false,
       workBilling: '',
+      contractPDF: '',
+      contractPDFName: '',
     });
     setErrors({});
   };
@@ -740,6 +748,57 @@ export function AddContractModal({ isOpen, onClose, onSave }: AddContractModalPr
                 <FileCheck size={16} />
                 <span>Contrato Físico (marcar si es físico, dejar vacío si es digital)</span>
               </label>
+            </div>
+
+            {/* Cargar PDF del contrato */}
+            <div>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#c9a574',
+                  marginBottom: '8px',
+                }}
+              >
+                <Upload size={16} />
+                Cargar PDF del Contrato
+              </label>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setFormData({
+                        ...formData,
+                        contractPDF: reader.result as string,
+                        contractPDFName: file.name,
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: 'rgba(42, 63, 63, 0.5)',
+                  border: '1px solid rgba(201, 165, 116, 0.3)',
+                  borderRadius: '10px',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
+              {formData.contractPDFName && (
+                <p style={{ fontSize: '12px', color: '#c9a574', marginTop: '4px' }}>
+                  Archivo cargado: {formData.contractPDFName}
+                </p>
+              )}
             </div>
           </div>
 

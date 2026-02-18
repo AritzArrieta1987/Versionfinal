@@ -3,25 +3,15 @@ import { X, FileText, Calendar, TrendingUp, CheckCircle, AlertCircle, Euro, File
 interface ContractDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  contract: {
-    id: number;
-    artistName: string;
-    artistPhoto?: string;
-    contractType: string;
-    royaltyPercentage: number;
-    startDate: string;
-    endDate: string;
-    status: 'active' | 'expired' | 'pending';
-    totalRevenue: number;
-    isPhysical: boolean;
-    workBilling: number;
-  } | null;
+  contract: any;
 }
 
 export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetailModalProps) {
   if (!isOpen || !contract) return null;
 
-  const statusConfig = {
+  console.log('Modal rendering with contract:', contract);
+
+  const statusConfig: any = {
     active: {
       label: 'Activo',
       color: '#22c55e',
@@ -42,40 +32,53 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
     },
   };
 
-  const currentStatus = statusConfig[contract.status];
+  const currentStatus = statusConfig[contract.status] || statusConfig.pending;
   const StatusIcon = currentStatus.icon;
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      weekday: 'long'
-    });
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+      }).format(amount || 0);
+    } catch (e) {
+      return `€${(amount || 0).toFixed(2)}`;
+    }
   };
 
+  // Valores seguros
+  const totalRevenue = Number(contract.totalRevenue) || 0;
+  const royaltyPercentage = Number(contract.royaltyPercentage) || 0;
+  const workBilling = Number(contract.workBilling) || 0;
+  const isPhysical = contract.isPhysical ?? false;
+
   // Calcular royalty del artista
-  const artistRoyalty = (contract.totalRevenue * contract.royaltyPercentage) / 100;
-  const labelShare = contract.totalRevenue - artistRoyalty;
+  const artistRoyalty = (totalRevenue * royaltyPercentage) / 100;
+  const labelShare = totalRevenue - artistRoyalty;
 
   // Calcular días hasta vencimiento
-  const today = new Date();
-  const endDate = new Date(contract.endDate);
-  const daysUntilExpiry = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-  // Asegurar valores por defecto
-  const workBilling = contract.workBilling || 0;
-  const totalRevenue = contract.totalRevenue || 0;
-  const isPhysical = contract.isPhysical ?? false;
+  let daysUntilExpiry = 0;
+  try {
+    const today = new Date();
+    const endDate = new Date(contract.endDate);
+    daysUntilExpiry = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  } catch (e) {
+    daysUntilExpiry = 0;
+  }
 
   return (
     <div
@@ -138,7 +141,7 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
                 {contract.artistPhoto ? (
                   <img
                     src={contract.artistPhoto}
-                    alt={contract.artistName}
+                    alt={contract.artistName || 'Artista'}
                     style={{
                       width: '48px',
                       height: '48px',
@@ -160,16 +163,16 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
                     }}
                   >
                     <span style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
-                      {contract.artistName.charAt(0)}
+                      {(contract.artistName || 'A').charAt(0).toUpperCase()}
                     </span>
                   </div>
                 )}
                 <div>
                   <div style={{ fontSize: '20px', fontWeight: '700', color: '#c9a574' }}>
-                    {contract.artistName}
+                    {contract.artistName || 'Artista'}
                   </div>
                   <div style={{ fontSize: '14px', color: '#AFB3B7' }}>
-                    ID del Contrato: #{contract.id}
+                    ID del Contrato: #{contract.id || 'N/A'}
                   </div>
                 </div>
               </div>
@@ -187,6 +190,7 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
                 justifyContent: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
+                flexShrink: 0,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(201, 165, 116, 0.2)';
@@ -247,7 +251,7 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
                 </span>
               </div>
               <div style={{ fontSize: '24px', fontWeight: '700', color: '#c9a574' }}>
-                {contract.contractType}
+                {contract.contractType || 'N/A'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                 <FileCheck size={14} color={isPhysical ? '#c9a574' : '#3b82f6'} />
@@ -302,7 +306,7 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
                   <span style={{ fontSize: '12px', color: '#AFB3B7' }}>% Royalties</span>
                 </div>
                 <div style={{ fontSize: '24px', fontWeight: '700', color: '#ffffff' }}>
-                  {contract.royaltyPercentage}%
+                  {royaltyPercentage}%
                 </div>
               </div>
 
@@ -363,6 +367,7 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
                   <Calendar size={24} color="#22c55e" />
@@ -402,6 +407,7 @@ export function ContractDetailModal({ isOpen, onClose, contract }: ContractDetai
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    flexShrink: 0,
                   }}
                 >
                   <Calendar size={24} color={contract.status === 'expired' ? '#ef4444' : '#f59e0b'} />

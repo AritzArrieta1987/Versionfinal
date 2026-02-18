@@ -13,6 +13,9 @@ interface ContractCardProps {
     totalRevenue: number;
     isPhysical: boolean;
     workBilling: number;
+    contractPDF?: string;
+    contractPDFName?: string;
+    signedAt?: string;
   };
   onClick: () => void;
 }
@@ -63,21 +66,10 @@ export function ContractCard({ contract, onClick }: ContractCardProps) {
         border: '1px solid rgba(201, 165, 116, 0.3)',
         borderRadius: '16px',
         padding: '24px',
-        cursor: 'pointer',
         transition: 'all 0.3s ease',
         boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
         position: 'relative',
         overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(201, 165, 116, 0.3)';
-        e.currentTarget.style.borderColor = 'rgba(201, 165, 116, 0.5)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.3)';
-        e.currentTarget.style.borderColor = 'rgba(201, 165, 116, 0.3)';
       }}
     >
       {/* Estado badge */}
@@ -252,6 +244,7 @@ export function ContractCard({ contract, onClick }: ContractCardProps) {
         style={{
           borderTop: '1px solid rgba(201, 165, 116, 0.2)',
           paddingTop: '16px',
+          marginBottom: contract.contractPDF ? '16px' : '0',
         }}
       >
         <div style={{ fontSize: '12px', color: '#AFB3B7', marginBottom: '4px' }}>
@@ -261,6 +254,30 @@ export function ContractCard({ contract, onClick }: ContractCardProps) {
           {formatCurrency(contract.totalRevenue)}
         </div>
       </div>
+
+      {/* Indicador de PDF y firma */}
+      {contract.contractPDF && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 12px',
+            background: contract.signedAt 
+              ? 'rgba(34, 197, 94, 0.1)' 
+              : 'rgba(96, 165, 250, 0.1)',
+            border: `1px solid ${contract.signedAt ? 'rgba(34, 197, 94, 0.3)' : 'rgba(96, 165, 250, 0.3)'}`,
+            borderRadius: '8px',
+          }}
+        >
+          <FileCheck size={14} color={contract.signedAt ? '#22c55e' : '#60a5fa'} />
+          <span style={{ fontSize: '12px', fontWeight: '600', color: contract.signedAt ? '#22c55e' : '#60a5fa' }}>
+            {contract.signedAt 
+              ? `✓ Firmado ${formatDate(contract.signedAt)}`
+              : 'PDF disponible - Pendiente de firma'}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

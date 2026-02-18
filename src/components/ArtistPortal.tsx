@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, BarChart3, Music, FileText, DollarSign, LogOut, Disc, CheckCircle, AlertCircle, Info, X, TrendingUp, Calendar, Camera, Settings, Wallet, CreditCard, Globe, Clock, Download, Eye, FileSignature, Package, Play, Pause, Shirt, ShoppingCart } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ContractPDFViewer } from './ContractPDFViewer';
 import logoImage from 'figma:asset/aa0296e2522220bcfcda71f86c708cb2cbc616b9.png';
 import backgroundImage from 'figma:asset/0a2a9faa1b59d5fa1e388a2eec5b08498dd7a493.png';
 
@@ -164,6 +165,9 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
     totalRevenue?: number;
     isPhysical?: boolean;
     workBilling?: string;
+    contractPDF?: string;
+    contractPDFName?: string;
+    signedAt?: string;
   }>>([]);
 
   // Cargar contratos del artista desde localStorage
@@ -178,6 +182,49 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
 
   // Estado para contrato seleccionado (modal de detalle)
   const [selectedContract, setSelectedContract] = useState<any>(null);
+  
+  // Estado para visor de PDF
+  const [showPDFViewer, setShowPDFViewer] = useState(false);
+  
+  // Función para firmar contrato
+  const handleSignContract = (contractId: number) => {
+    const allContracts = JSON.parse(localStorage.getItem('contracts') || '[]');
+    const updatedContracts = allContracts.map((contract: any) => {
+      if (contract.id === contractId) {
+        return {
+          ...contract,
+          signedAt: new Date().toISOString(),
+          status: 'active' // Cambiar a activo cuando se firma
+        };
+      }
+      return contract;
+    });
+    
+    // Guardar en localStorage
+    localStorage.setItem('contracts', JSON.stringify(updatedContracts));
+    
+    // Actualizar estado local
+    const artistContracts = updatedContracts.filter(
+      (contract: any) => contract.artistName === data.name
+    );
+    setContracts(artistContracts);
+    
+    // Crear notificación
+    const newNotification = {
+      id: Date.now(),
+      type: 'success',
+      title: 'Contrato Firmado',
+      message: 'Has firmado el contrato exitosamente',
+      time: new Date().toLocaleString('es-ES'),
+      read: false
+    };
+    
+    const artistNotificationKey = `artistNotifications_${data.id}`;
+    const existingNotifications = JSON.parse(localStorage.getItem(artistNotificationKey) || '[]');
+    const updatedNotifications = [newNotification, ...existingNotifications];
+    localStorage.setItem(artistNotificationKey, JSON.stringify(updatedNotifications));
+    setNotifications(updatedNotifications);
+  };
 
   // Estado para notificación de éxito de pago
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
@@ -2307,48 +2354,45 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                       </div>
                     </div>
 
+                    {/* Estado del contrato firmado */}
+                    {contract.signedAt && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '12px',
+                        background: 'rgba(34, 197, 94, 0.1)',
+                        border: '1px solid rgba(34, 197, 94, 0.3)',
+                        borderRadius: '10px',
+                        marginBottom: '12px'
+                      }}>
+                        <CheckCircle size={16} color="#22c55e" />
+                        <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: '600' }}>
+                          Firmado el {new Date(contract.signedAt).toLocaleDateString('es-ES')}
+                        </span>
+                      </div>
+                    )}
+
                     <div style={{
                       display: 'flex',
-                      gap: isMobile ? '8px' : '12px',
-                      flexDirection: isMobile ? 'column' : 'row'
+                      justifyContent: 'center'
                     }}>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedContract(contract);
+                          setShowPDFViewer(true);
                         }}
                         style={{
-                          flex: 1,
-                          background: 'rgba(201, 165, 116, 0.1)',
-                          border: '1px solid rgba(201, 165, 116, 0.3)',
-                          borderRadius: '10px',
-                          padding: '10px 16px',
-                          color: '#c9a574',
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        <Eye size={16} />
-                        Ver Detalles
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          alert('Descargando contrato...');
-                        }}
-                        style={{
-                          background: 'linear-gradient(135deg, #c9a574 0%, #b8956a 100%)',
+                          width: '100%',
+                          background: contract.signedAt 
+                            ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                            : 'linear-gradient(135deg, #c9a574 0%, #b8956a 100%)',
                           border: 'none',
                           borderRadius: '10px',
-                          padding: '10px 16px',
-                          color: '#1a1a1a',
-                          fontSize: '13px',
+                          padding: '12px 20px',
+                          color: contract.signedAt ? '#ffffff' : '#1a1a1a',
+                          fontSize: '14px',
                           fontWeight: '700',
                           cursor: 'pointer',
                           display: 'flex',
@@ -2356,11 +2400,22 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
                           justifyContent: 'center',
                           gap: '8px',
                           transition: 'all 0.2s ease',
-                          boxShadow: '0 4px 12px rgba(201, 165, 116, 0.3)'
+                          boxShadow: contract.signedAt 
+                            ? '0 4px 12px rgba(34, 197, 94, 0.3)'
+                            : '0 4px 12px rgba(201, 165, 116, 0.3)'
                         }}
                       >
-                        <Download size={16} />
-                        PDF
+                        {contract.signedAt ? (
+                          <>
+                            <Eye size={16} />
+                            Ver Contrato Firmado
+                          </>
+                        ) : (
+                          <>
+                            <FileSignature size={16} />
+                            Ver y Firmar Contrato
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -2954,314 +3009,6 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
         </div>
       )}
 
-      {/* Modal de Detalle del Contrato */}
-      {selectedContract && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.85)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: isMobile ? 'flex-end' : 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: isMobile ? '0' : '20px'
-          }}
-          onClick={() => setSelectedContract(null)}
-        >
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(42, 63, 63, 0.98) 0%, rgba(30, 47, 47, 0.98) 100%)',
-              border: '2px solid #c9a574',
-              borderRadius: isMobile ? '20px 20px 0 0' : '20px',
-              maxWidth: isMobile ? '100%' : '700px',
-              width: '100%',
-              maxHeight: isMobile ? '85vh' : '90vh',
-              overflow: 'auto',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              padding: isMobile ? '20px' : '28px',
-              borderBottom: '1px solid rgba(201, 165, 116, 0.2)'
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: isMobile ? '12px' : '16px'
-              }}>
-                <h2 style={{
-                  fontSize: isMobile ? '20px' : '24px',
-                  fontWeight: '700',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: isMobile ? '8px' : '12px'
-                }}>
-                  <FileSignature size={28} color="#c9a574" />
-                  {selectedContract.contractType}
-                </h2>
-                <button
-                  onClick={() => setSelectedContract(null)}
-                  style={{
-                    background: 'rgba(201, 165, 116, 0.1)',
-                    border: '1px solid rgba(201, 165, 116, 0.3)',
-                    borderRadius: '8px',
-                    padding: '8px',
-                    color: '#c9a574',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                background: selectedContract.status === 'active' ? 'rgba(74, 222, 128, 0.15)' : selectedContract.status === 'expired' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(251, 191, 36, 0.15)',
-                border: selectedContract.status === 'active' ? '1px solid rgba(74, 222, 128, 0.4)' : selectedContract.status === 'expired' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(251, 191, 36, 0.4)',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: '700',
-                color: selectedContract.status === 'active' ? '#4ade80' : selectedContract.status === 'expired' ? '#ef4444' : '#fbbf24',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                {selectedContract.status === 'active' ? <CheckCircle size={14} /> : <Clock size={14} />}
-                {selectedContract.status === 'active' ? 'Activo' : selectedContract.status === 'expired' ? 'Expirado' : 'Pendiente'}
-              </div>
-            </div>
-
-            <div style={{ padding: isMobile ? '20px' : '28px' }}>
-              <div style={{ marginBottom: isMobile ? '20px' : '28px' }}>
-                <h3 style={{
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  marginBottom: '10px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Descripción
-                </h3>
-                <p style={{
-                  fontSize: '14px',
-                  color: '#AFB3B7',
-                  lineHeight: '1.7'
-                }}>
-                  Este contrato de {selectedContract.contractType} establece los términos y condiciones para la distribución y comercialización de tu música con BIGARTIST ROYALTIES. El contrato es de tipo {selectedContract.isPhysical ? 'físico' : 'digital'} y garantiza un {selectedContract.royaltyPercentage}% de royalties sobre los ingresos generados.
-                </p>
-              </div>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: isMobile ? '12px' : '16px',
-                marginBottom: isMobile ? '20px' : '28px'
-              }}>
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(201, 165, 116, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px'
-                }}>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#AFB3B7',
-                    marginBottom: '6px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    Tipo de Contrato
-                  </div>
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    color: '#ffffff'
-                  }}>
-                    {selectedContract.contractType}
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(201, 165, 116, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px'
-                }}>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#AFB3B7',
-                    marginBottom: '6px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    Porcentaje de Royalty
-                  </div>
-                  <div style={{
-                    fontSize: '20px',
-                    fontWeight: '700',
-                    color: '#c9a574'
-                  }}>
-                    {selectedContract.royaltyPercentage}%
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(201, 165, 116, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px'
-                }}>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#AFB3B7',
-                    marginBottom: '6px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    Fecha de Inicio
-                  </div>
-                  <div style={{
-                    fontSize: '15px',
-                    fontWeight: '700',
-                    color: '#ffffff'
-                  }}>
-                    {new Date(selectedContract.startDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(201, 165, 116, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px'
-                }}>
-                  <div style={{
-                    fontSize: '11px',
-                    color: '#AFB3B7',
-                    marginBottom: '6px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    Fecha de Finalización
-                  </div>
-                  <div style={{
-                    fontSize: '15px',
-                    fontWeight: '700',
-                    color: '#ffffff'
-                  }}>
-                    {new Date(selectedContract.endDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '28px' }}>
-                <h3 style={{
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  marginBottom: '10px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Territorios
-                </h3>
-                <div style={{
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(201, 165, 116, 0.2)',
-                  borderRadius: '12px',
-                  padding: '14px 18px'
-                }}>
-                  <div style={{
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <Globe size={16} color="#c9a574" />
-                    {selectedContract.territories}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '28px' }}>
-                <h3 style={{
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  color: '#c9a574',
-                  marginBottom: '10px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Plataformas Incluidas
-                </h3>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '10px'
-                }}>
-                  {selectedContract.platforms.map((platform: string, index: number) => (
-                    <div
-                      key={index}
-                      style={{
-                        background: 'rgba(201, 165, 116, 0.1)',
-                        border: '1px solid rgba(201, 165, 116, 0.3)',
-                        borderRadius: '10px',
-                        padding: '8px 16px',
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        color: '#c9a574'
-                      }}
-                    >
-                      {platform}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                onClick={() => alert('Descargando contrato PDF...')}
-                style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #c9a574 0%, #b8956a 100%)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  color: '#1a1a1a',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 16px rgba(201, 165, 116, 0.4)'
-                }}
-              >
-                <Download size={20} />
-                Descargar Contrato (PDF)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Bottom Navigation Móvil */}
       {isMobile && (
         <div style={{
@@ -3324,6 +3071,17 @@ export default function ArtistPortal({ onLogout, artistData }: ArtistPortalProps
 
       {/* Elemento de audio oculto para reproducción */}
       <audio ref={audioRef} style={{ display: 'none' }} />
+
+      {/* Visor de PDF del contrato */}
+      <ContractPDFViewer
+        isOpen={showPDFViewer}
+        onClose={() => {
+          setShowPDFViewer(false);
+          setSelectedContract(null);
+        }}
+        contract={selectedContract}
+        onSign={handleSignContract}
+      />
     </div>
   );
 }
