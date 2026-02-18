@@ -32,7 +32,7 @@ export default function App() {
         setUserType(user.type);
         setUserData(user);
         setIsLoggedIn(true);
-        console.log('🔐 Usuario restaurado:', user.type, user.email);
+        // Información sensible removida por seguridad
       } catch (e) {
         // Si hay error parseando, limpiar localStorage
         localStorage.removeItem('authToken');
@@ -46,7 +46,7 @@ export default function App() {
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        console.log('👤 Usuario logueado:', user.type, user.email);
+        // Información sensible removida por seguridad
         setUserType(user.type);
         setUserData(user);
         setIsLoggedIn(true);

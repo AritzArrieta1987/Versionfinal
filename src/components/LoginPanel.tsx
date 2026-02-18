@@ -43,6 +43,7 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
                            window.location.hostname.includes('preview');
       
       if (isDevelopment) {
+        // Información de debug solo en desarrollo
         setDebugInfo('🔧 Modo desarrollo - Usando autenticación local');
         
         // Credenciales de desarrollo
@@ -76,15 +77,13 @@ export default function LoginPanel({ onLoginSuccess }: LoginPanelProps) {
         return;
       }
       
-      // MODO PRODUCCIÓN: Conectar al backend real
-      setDebugInfo('🔄 Conectando al servidor...');
+      // MODO PRODUCCIÓN: Conectar al backend real (sin mostrar debug info)
       
       // Llamada al backend para validar credenciales
       const response = await login(email, password);
 
       if (response.success) {
         // Login exitoso
-        setDebugInfo('✅ Login exitoso!');
         
         // Guardar token y datos del usuario
         localStorage.setItem('authToken', response.token);

@@ -1,5 +1,5 @@
 import { Upload, FileText, Check, X, AlertCircle, Download } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface CSVRow {
   [key: string]: string;
@@ -14,6 +14,19 @@ export function UploadPage() {
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true); // ✅ Track si el componente está montado
+
+  // Cleanup al desmontar
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false; // ✅ Marcar como desmontado
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -135,8 +148,19 @@ export function UploadPage() {
 
     setIsProcessing(true);
 
+    // Limpiar timeout anterior si existe
+    if (processingTimeoutRef.current) {
+      clearTimeout(processingTimeoutRef.current);
+    }
+
     // Simular procesamiento (en producción, aquí harías la llamada a la API)
-    setTimeout(() => {
+    processingTimeoutRef.current = setTimeout(() => {
+      // ✅ Verificar que el componente sigue montado antes de actualizar estado
+      if (!isMountedRef.current) {
+        console.log('⚠️ Componente desmontado, cancelando actualización de estado');
+        return;
+      }
+
       // 🗑️ LIMPIAR TODOS LOS DATOS ANTERIORES
       console.log('🗑️ Limpiando datos anteriores...');
       localStorage.removeItem('uploadedCSVs');
@@ -195,8 +219,11 @@ export function UploadPage() {
       console.log('✅ Artistas creados desde CSV:', newArtists.length);
       console.log('📊 Lista de artistas:', newArtists.map(a => a.name));
 
-      setIsProcessing(false);
-      setUploadStatus('success');
+      // ✅ SOLO actualizar estado si el componente sigue montado
+      if (isMountedRef.current) {
+        setIsProcessing(false);
+        setUploadStatus('success');
+      }
     }, 2000);
   };
 

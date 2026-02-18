@@ -4,10 +4,16 @@ const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VIT
   ? import.meta.env.VITE_API_URL 
   : 'https://app.bigartist.es/api';
 
-console.log('🔧 API Configuration:', {
-  API_BASE_URL,
-  environment: typeof import.meta !== 'undefined' ? import.meta.env?.MODE : 'production'
-});
+// Solo mostrar configuración en desarrollo local
+const isLocalhost = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+if (isLocalhost) {
+  console.log('🔧 API Configuration:', {
+    API_BASE_URL,
+    environment: typeof import.meta !== 'undefined' ? import.meta.env?.MODE : 'production'
+  });
+}
 
 export const API_ENDPOINTS = {
   // Auth
@@ -64,8 +70,14 @@ export const apiRequest = async (url: string, options: RequestInit = {}) => {
 // Función de login
 export const login = async (email: string, password: string) => {
   try {
-    console.log('🔍 Intentando login a:', API_ENDPOINTS.LOGIN);
-    console.log('📧 Email:', email);
+    // Logs removidos en producción por seguridad
+    const isLocalhost = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    
+    if (isLocalhost) {
+      console.log('🔍 Intentando login a:', API_ENDPOINTS.LOGIN);
+      console.log('📧 Email:', email);
+    }
     
     const response = await fetch(API_ENDPOINTS.LOGIN, {
       method: 'POST',
@@ -75,11 +87,16 @@ export const login = async (email: string, password: string) => {
       body: JSON.stringify({ email, password }),
     });
 
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response ok:', response.ok);
+    if (isLocalhost) {
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
+    }
 
     const data = await response.json();
-    console.log('📦 Response data:', data);
+    
+    if (isLocalhost) {
+      console.log('📦 Response data:', data);
+    }
 
     if (!response.ok) {
       throw new Error(data.message || 'Error en el login');
